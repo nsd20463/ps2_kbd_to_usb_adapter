@@ -51,7 +51,7 @@ $(OUT) : $(OBJ)
 
 # clean outputs
 clean :
-	rm $(OBJ) $(OUT)
+	-rm $(wildcard $(OBJ) $(OUT) $(HEX))
 
 # program
 flash : $(HEX)
