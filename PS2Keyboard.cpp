@@ -53,13 +53,12 @@
 #define BUFFER_SIZE 45
 static volatile uint8_t buffer[BUFFER_SIZE];
 static volatile uint8_t head, tail;
-static uint8_t DataPin;
 static uint8_t CharBuffer=0;
 static uint8_t UTF8next=0;
 static const PS2Keymap_t *keymap=NULL;
 
 // The ISR for the external interrupt
-void ps2interrupt(void)
+ISR(INT0_vect)
 {
 	static uint8_t bitcount=0;
 	static uint8_t incoming=0;
@@ -67,7 +66,9 @@ void ps2interrupt(void)
 	uint32_t now_ms;
 	uint8_t n, val;
 
-	val = digitalRead(DataPin);
+    // read the data pin
+    val = (PIND >> PS2_DATA_PIN) & 1;
+
 	now_ms = millis();
 	if (now_ms - prev_ms > 250) {
 		bitcount = 0;
@@ -153,122 +154,7 @@ const PROGMEM PS2Keymap_t PS2Keymap_US = {
 };
 
 
-const PROGMEM PS2Keymap_t PS2Keymap_German = {
-  // without shift
-	{0, PS2_F9, 0, PS2_F5, PS2_F3, PS2_F1, PS2_F2, PS2_F12,
-	0, PS2_F10, PS2_F8, PS2_F6, PS2_F4, PS2_TAB, '^', 0,
-	0, 0 /*Lalt*/, 0 /*Lshift*/, 0, 0 /*Lctrl*/, 'q', '1', 0,
-	0, 0, 'y', 's', 'a', 'w', '2', 0,
-	0, 'c', 'x', 'd', 'e', '4', '3', 0,
-	0, ' ', 'v', 'f', 't', 'r', '5', 0,
-	0, 'n', 'b', 'h', 'g', 'z', '6', 0,
-	0, 0, 'm', 'j', 'u', '7', '8', 0,
-	0, ',', 'k', 'i', 'o', '0', '9', 0,
-	0, '.', '-', 'l', PS2_o_DIAERESIS, 'p', PS2_SHARP_S, 0,
-	0, 0, PS2_a_DIAERESIS, 0, PS2_u_DIAERESIS, '\'', 0, 0,
-	0 /*CapsLock*/, 0 /*Rshift*/, PS2_ENTER /*Enter*/, '+', 0, '#', 0, 0,
-	0, '<', 0, 0, 0, 0, PS2_BACKSPACE, 0,
-	0, '1', 0, '4', '7', 0, 0, 0,
-	'0', '.', '2', '5', '6', '8', PS2_ESC, 0 /*NumLock*/,
-	PS2_F11, '+', '3', '-', '*', '9', PS2_SCROLL, 0,
-	0, 0, 0, PS2_F7 },
-  // with shift
-	{0, PS2_F9, 0, PS2_F5, PS2_F3, PS2_F1, PS2_F2, PS2_F12,
-	0, PS2_F10, PS2_F8, PS2_F6, PS2_F4, PS2_TAB, PS2_DEGREE_SIGN, 0,
-	0, 0 /*Lalt*/, 0 /*Lshift*/, 0, 0 /*Lctrl*/, 'Q', '!', 0,
-	0, 0, 'Y', 'S', 'A', 'W', '"', 0,
-	0, 'C', 'X', 'D', 'E', '$', PS2_SECTION_SIGN, 0,
-	0, ' ', 'V', 'F', 'T', 'R', '%', 0,
-	0, 'N', 'B', 'H', 'G', 'Z', '&', 0,
-	0, 0, 'M', 'J', 'U', '/', '(', 0,
-	0, ';', 'K', 'I', 'O', '=', ')', 0,
-	0, ':', '_', 'L', PS2_O_DIAERESIS, 'P', '?', 0,
-	0, 0, PS2_A_DIAERESIS, 0, PS2_U_DIAERESIS, '`', 0, 0,
-	0 /*CapsLock*/, 0 /*Rshift*/, PS2_ENTER /*Enter*/, '*', 0, '\'', 0, 0,
-	0, '>', 0, 0, 0, 0, PS2_BACKSPACE, 0,
-	0, '1', 0, '4', '7', 0, 0, 0,
-	'0', '.', '2', '5', '6', '8', PS2_ESC, 0 /*NumLock*/,
-	PS2_F11, '+', '3', '-', '*', '9', PS2_SCROLL, 0,
-	0, 0, 0, PS2_F7 },
-	1,
-  // with altgr
-	{0, PS2_F9, 0, PS2_F5, PS2_F3, PS2_F1, PS2_F2, PS2_F12,
-	0, PS2_F10, PS2_F8, PS2_F6, PS2_F4, PS2_TAB, 0, 0,
-	0, 0 /*Lalt*/, 0 /*Lshift*/, 0, 0 /*Lctrl*/, '@', 0, 0,
-	0, 0, 0, 0, 0, 0, PS2_SUPERSCRIPT_TWO, 0,
-	0, 0, 0, 0, PS2_CURRENCY_SIGN, 0, PS2_SUPERSCRIPT_THREE, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, PS2_MICRO_SIGN, 0, 0, '{', '[', 0,
-	0, 0, 0, 0, 0, '}', ']', 0,
-	0, 0, 0, 0, 0, 0, '\\', 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0 /*CapsLock*/, 0 /*Rshift*/, PS2_ENTER /*Enter*/, '~', 0, '#', 0, 0,
-	0, '|', 0, 0, 0, 0, PS2_BACKSPACE, 0,
-	0, '1', 0, '4', '7', 0, 0, 0,
-	'0', '.', '2', '5', '6', '8', PS2_ESC, 0 /*NumLock*/,
-	PS2_F11, '+', '3', '-', '*', '9', PS2_SCROLL, 0,
-	0, 0, 0, PS2_F7 }
-};
 
-
-const PROGMEM PS2Keymap_t PS2Keymap_French = {
-  // without shift
-	{0, PS2_F9, 0, PS2_F5, PS2_F3, PS2_F1, PS2_F2, PS2_F12,
-	0, PS2_F10, PS2_F8, PS2_F6, PS2_F4, PS2_TAB, PS2_SUPERSCRIPT_TWO, 0,
-	0, 0 /*Lalt*/, 0 /*Lshift*/, 0, 0 /*Lctrl*/, 'a', '&', 0,
-	0, 0, 'w', 's', 'q', 'z', PS2_e_ACUTE, 0,
-	0, 'c', 'x', 'd', 'e', '\'', '"', 0,
-	0, ' ', 'v', 'f', 't', 'r', '(', 0,
-	0, 'n', 'b', 'h', 'g', 'y', '-', 0,
-	0, 0, ',', 'j', 'u', PS2_e_GRAVE, '_', 0,
-	0, ';', 'k', 'i', 'o', PS2_a_GRAVE, PS2_c_CEDILLA, 0,
-	0, ':', '!', 'l', 'm', 'p', ')', 0,
-	0, 0, PS2_u_GRAVE, 0, '^', '=', 0, 0,
-	0 /*CapsLock*/, 0 /*Rshift*/, PS2_ENTER /*Enter*/, '$', 0, '*', 0, 0,
-	0, '<', 0, 0, 0, 0, PS2_BACKSPACE, 0,
-	0, '1', 0, '4', '7', 0, 0, 0,
-	'0', '.', '2', '5', '6', '8', PS2_ESC, 0 /*NumLock*/,
-	PS2_F11, '+', '3', '-', '*', '9', PS2_SCROLL, 0,
-	0, 0, 0, PS2_F7 },
-  // with shift
-	{0, PS2_F9, 0, PS2_F5, PS2_F3, PS2_F1, PS2_F2, PS2_F12,
-	0, PS2_F10, PS2_F8, PS2_F6, PS2_F4, PS2_TAB, 0, 0,
-	0, 0 /*Lalt*/, 0 /*Lshift*/, 0, 0 /*Lctrl*/, 'A', '1', 0,
-	0, 0, 'W', 'S', 'Q', 'Z', '2', 0,
-	0, 'C', 'X', 'D', 'E', '4', '3', 0,
-	0, ' ', 'V', 'F', 'T', 'R', '5', 0,
-	0, 'N', 'B', 'H', 'G', 'Y', '6', 0,
-	0, 0, '?', 'J', 'U', '7', '8', 0,
-	0, '.', 'K', 'I', 'O', '0', '9', 0,
-	0, '/', PS2_SECTION_SIGN, 'L', 'M', 'P', PS2_DEGREE_SIGN, 0,
-	0, 0, '%', 0, PS2_DIAERESIS, '+', 0, 0,
-	0 /*CapsLock*/, 0 /*Rshift*/, PS2_ENTER /*Enter*/, PS2_POUND_SIGN, 0, PS2_MICRO_SIGN, 0, 0,
-	0, '>', 0, 0, 0, 0, PS2_BACKSPACE, 0,
-	0, '1', 0, '4', '7', 0, 0, 0,
-	'0', '.', '2', '5', '6', '8', PS2_ESC, 0 /*NumLock*/,
-	PS2_F11, '+', '3', '-', '*', '9', PS2_SCROLL, 0,
-	0, 0, 0, PS2_F7 },
-	1,
-  // with altgr
-	{0, PS2_F9, 0, PS2_F5, PS2_F3, PS2_F1, PS2_F2, PS2_F12,
-	0, PS2_F10, PS2_F8, PS2_F6, PS2_F4, PS2_TAB, 0, 0,
-	0, 0 /*Lalt*/, 0 /*Lshift*/, 0, 0 /*Lctrl*/, '@', 0, 0,
-	0, 0, 0, 0, 0, 0, '~', 0,
-	0, 0, 0, 0, 0 /*PS2_EURO_SIGN*/, '{', '#', 0,
-	0, 0, 0, 0, 0, 0, '[', 0,
-	0, 0, 0, 0, 0, 0, '|', 0,
-	0, 0, 0, 0, 0, '`', '\\', 0,
-	0, 0, 0, 0, 0, '@', '^', 0,
-	0, 0, 0, 0, 0, 0, ']', 0,
-	0, 0, 0, 0, 0, 0, '}', 0,
-	0 /*CapsLock*/, 0 /*Rshift*/, PS2_ENTER /*Enter*/, '¤', 0, '#', 0, 0,
-	0, '|', 0, 0, 0, 0, PS2_BACKSPACE, 0,
-	0, '1', 0, '4', '7', 0, 0, 0,
-	'0', '.', '2', '5', '6', '8', PS2_ESC, 0 /*NumLock*/,
-	PS2_F11, '+', '3', '-', '*', '9', PS2_SCROLL, 0,
-	0, 0, 0, PS2_F7 }
-};
 
 
 #define BREAK     0x01
@@ -375,73 +261,16 @@ int PS2Keyboard::read() {
 	return result;
 }
 
-PS2Keyboard::PS2Keyboard() {
-  // nothing to do here, begin() does it all
-}
-
-void PS2Keyboard::begin(uint8_t data_pin, uint8_t irq_pin, const PS2Keymap_t &map) {
-  uint8_t irq_num=255;
-
-  DataPin = data_pin;
+void PS2Keyboard::begin(const PS2Keymap_t &map) {
   keymap = &map;
 
-  // initialize the pins
-  pinMode(irq_pin, INPUT_PULLUP);
-  pinMode(data_pin, INPUT_PULLUP);
-
-#ifdef CORE_INT_EVERY_PIN
-  irq_num = irq_pin;
-
-#else
-  switch(irq_pin) {
-    #ifdef CORE_INT0_PIN
-    case CORE_INT0_PIN:
-      irq_num = 0;
-      break;
-    #endif
-    #ifdef CORE_INT1_PIN
-    case CORE_INT1_PIN:
-      irq_num = 1;
-      break;
-    #endif
-    #ifdef CORE_INT2_PIN
-    case CORE_INT2_PIN:
-      irq_num = 2;
-      break;
-    #endif
-    #ifdef CORE_INT3_PIN
-    case CORE_INT3_PIN:
-      irq_num = 3;
-      break;
-    #endif
-    #ifdef CORE_INT4_PIN
-    case CORE_INT4_PIN:
-      irq_num = 4;
-      break;
-    #endif
-    #ifdef CORE_INT5_PIN
-    case CORE_INT5_PIN:
-      irq_num = 5;
-      break;
-    #endif
-    #ifdef CORE_INT6_PIN
-    case CORE_INT6_PIN:
-      irq_num = 6;
-      break;
-    #endif
-    #ifdef CORE_INT7_PIN
-    case CORE_INT7_PIN:
-      irq_num = 7;
-      break;
-    #endif
-  }
-#endif
-
-  head = 0;
-  tail = 0;
-  if (irq_num < 255) {
-    attachInterrupt(irq_num, ps2interrupt, FALLING);
-  }
+  // initialize both clk and data to be pulled-up input pins
+  DDRD = 0; // not really needed since the reset value is 0
+  PORTD |= _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
+ 
+  // configure INT0 (PS2_CLK_PIN) on the falling edge
+  // DIEOE   DIEOV  DI 
+  EICRA |= _BV(ISC01); // interrupt on a falling edge of INT0 (assuming ISC00 is 0)
+  EIMSK |= _BV(INT0); // enable INT0
 }
-
 

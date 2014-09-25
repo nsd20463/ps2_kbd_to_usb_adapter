@@ -26,13 +26,20 @@
 #ifndef PS2Keyboard_h
 #define PS2Keyboard_h
 
-#if defined(ARDUINO) && ARDUINO >= 100
-#include "Arduino.h" // for attachInterrupt, FALLING
-#else
-#include "WProgram.h"
-#endif
+#include <avr/io.h>         // this contains the AVR IO port definitions
+#include <avr/interrupt.h>  // interrupt service routines
+#include <avr/pgmspace.h>   // tools used to store variables in program memory
+#include <avr/sleep.h>      // sleep mode utilities
+#include <util/delay.h>     // some convenient delay functions
+#include <stdint.h>
+#include <stdlib.h>
 
-//#include "utility/int_pins.h"
+unsigned long millis();
+
+// Note for this app the Clock pin is hardcoded to be INT0/PORTD0
+// and Data pin is hardcoded to be PORTD1 (For lack of better imagination)
+#define PS2_CLK_PIN  PD0
+#define PS2_DATA_PIN PD1
 
 // Every call to read() returns a single byte for each
 // keystroke.  These configure what byte will be returned
@@ -164,6 +171,8 @@
 
 #define PS2_KEYMAP_SIZE 136
 
+
+
 typedef struct {
 	uint8_t noshift[PS2_KEYMAP_SIZE];
 	uint8_t shift[PS2_KEYMAP_SIZE];
@@ -187,14 +196,14 @@ class PS2Keyboard {
   	 * This constructor does basically nothing. Please call the begin(int,int)
   	 * method before using any other method of this class.
   	 */
-    PS2Keyboard();
+    PS2Keyboard() {}
     
     /**
      * Starts the keyboard "service" by registering the external interrupt.
      * setting the pin modes correctly and driving those needed to high.
      * The propably best place to call this method is in the setup routine.
      */
-    static void begin(uint8_t dataPin, uint8_t irq_pin, const PS2Keymap_t &map = PS2Keymap_US);
+    static void begin(const PS2Keymap_t &map = PS2Keymap_US);
     
     /**
      * Returns true if there is a char to be read, false if not.

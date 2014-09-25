@@ -115,94 +115,45 @@
  * then it sends 0xAA indicating it is ready.
  *
  *
+ */
 
 #include "PS2Keyboard.h"
 
 PS2Keyboard ps2k;
 
 int main(void) {
-    ps2k.begin(2,3,PS2Keymap_US);
+    ps2k.begin(PS2Keymap_US);
+
+    // now that everything is setup, enable interrupts
+    sei();
 
     while (1) {
+        // sleep until there's something of interest
+        set_sleep_mode(SLEEP_MODE_IDLE);
+        sleep_enable();
+        sleep_cpu();
+        // <sleeping>
+        sleep_disable();
+        
         if (ps2k.available()) {
             int c = ps2k.read();
 
+            // flash the LED to show the byte we got
+            DDRE = (1<<6); // make bit 6 (the LED) an output
+            for (uint8_t i=8; i; i--) {
+                uint8_t bit = (c>>7)&1;
+                c <<= 1;
+                PORTE = (bit<<6);
+                _delay_ms(25);
+                PORTE = 0x00;
+                _delay_ms(125);
+            }
         }
     }
 }
 
 // pull in pieces of arduino standard library that we use
 // (nice and quick and a dirty hack :-)
-void pinMode(uint8_t pin, uint8_t mode) {
-    uint8_t bit = digitalPinToBitMask(pin);
-    uint8_t port = digitalPinToPort(pin);
-    volatile uint8_t *reg, *out;
-
-	reg = portModeRegister(port);
-	out = portOutputRegister(port);
-
-	if (mode == INPUT) { 
-		uint8_t oldSREG = SREG;
-                cli();
-		*reg &= ~bit;
-		*out &= ~bit;
-		SREG = oldSREG;
-	} else if (mode == INPUT_PULLUP) {
-		uint8_t oldSREG = SREG;
-                cli();
-		*reg &= ~bit;
-		*out |= bit;
-		SREG = oldSREG;
-	} else {
-		uint8_t oldSREG = SREG;
-                cli();
-		*reg |= bit;
-		SREG = oldSREG;
-	}
-}
-
-void digitalWrite(uint8_t pin, uint8_t val)
-{
-	uint8_t timer = digitalPinToTimer(pin);
-	uint8_t bit = digitalPinToBitMask(pin);
-	uint8_t port = digitalPinToPort(pin);
-	volatile uint8_t *out;
-
-	if (port == NOT_A_PIN) return;
-
-	// If the pin that support PWM output, we need to turn it off
-	// before doing a digital write.
-	if (timer != NOT_ON_TIMER) turnOffPWM(timer);
-
-	out = portOutputRegister(port);
-
-	uint8_t oldSREG = SREG;
-	cli();
-
-	if (val == LOW) {
-		*out &= ~bit;
-	} else {
-		*out |= bit;
-	}
-
-	SREG = oldSREG;
-}
-
-int digitalRead(uint8_t pin)
-{
-	uint8_t timer = digitalPinToTimer(pin);
-	uint8_t bit = digitalPinToBitMask(pin);
-	uint8_t port = digitalPinToPort(pin);
-
-	if (port == NOT_A_PIN) return LOW;
-
-	// If the pin that support PWM output, we need to turn it off
-	// before getting a digital reading.
-	if (timer != NOT_ON_TIMER) turnOffPWM(timer);
-
-	if (*portInputRegister(port) & bit) return HIGH;
-	return LOW;
-}
 
 
 volatile unsigned long timer0_millis = 0;
@@ -221,6 +172,10 @@ unsigned long millis()
 
 	return m;
 }
+
+#define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
+#define clockCyclesToMicroseconds(a) ( (a) / clockCyclesPerMicrosecond() )
+#define microsecondsToClockCycles(a) ( (a) * clockCyclesPerMicrosecond() )
 
 // the prescaler is set so that timer0 ticks every 64 clock cycles, and the
 // the overflow handler is called every 256 ticks.

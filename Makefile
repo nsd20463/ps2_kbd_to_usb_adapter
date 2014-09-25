@@ -8,14 +8,7 @@ SRC = ps2_kbd_to_usb_adapter.cpp PS2Keyboard.cpp
 OUT = ps2_kbd_to_usb_adapter.elf
 MCU = atmega32u4
 
-SRC = tst.cpp
-OUT = tst.elf
-
 DEFINES = F_CPU=16000000
-
-# defines to [ab]use the arduino libraries
-#DEFINES += ARDUINO=101
-#INCDIRS = /usr/share/arduino/hardware/arduino/cores/arduino/ /usr/share/arduino/hardware/arduino/variants/leonardo
 
 CFLAGS = -mmcu=$(MCU) -Os -Wall $(DEFINES:%=-D%) $(INCDIRS:%=-I%)
 LDFLAGS = 
