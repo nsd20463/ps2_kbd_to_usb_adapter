@@ -59,22 +59,24 @@ static const PS2Keymap_t *keymap=NULL;
 
 // The ISR for the external interrupt,
 // which happens on the falling edge of the PS2 Clock signal
+static volatile uint8_t bitcount=0;
+static volatile unsigned long prev_ms=0;
 ISR(INT0_vect)
 {
-	static uint8_t bitcount=0;
 	static uint8_t incoming=0;
-	static uint32_t prev_ms=0;
-	uint32_t now_ms;
-	uint8_t n, val;
+	unsigned long now_ms;
+	uint8_t n, bn, val;
 
  
     // read the data pin
     val = (PIND >> PS2_DATA_PIN) & 1;
 
+	n = bitcount;
+
 	now_ms = millis();
 	if (now_ms - prev_ms > 100) {
         // it's been too long; start over
-		bitcount = 0;
+		n = 0;
 		incoming = 0;
 	}
 	prev_ms = now_ms;
@@ -84,26 +86,27 @@ ISR(INT0_vect)
     // I don't know why, and I don't know whether it is the keyboard or the computer, but I need to ignore these.
     // In addition, I need to figure out how to not have this interfere with a normal keystroke if it happens to start.
     // Aha, since data floats high during this I know this isn't a proper start bit and I can ignore it.
-    if (bitcount == 0 && val) {
+    if (n == 0 && val) {
         // not a proper start bit; ignore it
         return;
     }
 
-	n = bitcount - 1;
-	if (n <= 7) { // note n is unsigned, so this skips both the start bit and the parity and stop bits
-		incoming |= val << n;
+    bn = n-1;
+	if (bn < 8) { // note bn is unsigned, so this skips both the start bit and the parity and stop bits
+		incoming |= val << bn;
 	}
-	bitcount++;
-	if (bitcount == 11) {
+    n++;
+	if (n == 11) {
 		uint8_t i = head + 1;
 		if (i >= BUFFER_SIZE) i = 0;
 		if (i != tail) {
 			buffer[i] = incoming;
 			head = i;
 		}
-		bitcount = 0;
+		n = 0;
 		incoming = 0;
 	}
+    bitcount = n;
     // else check the parity bit for correctness?
 }
 
@@ -251,8 +254,104 @@ bool PS2Keyboard::raw_available() {
     return head != tail;
 }
 
-int PS2Keyboard::raw_read() {
+uint8_t PS2Keyboard::raw_read() {
     return get_scan_code();
+}
+
+// send a byte to the keyboard
+bool PS2Keyboard::raw_write(uint8_t v) {
+    // to send a byte to the keyboard over the PS/2 (aka AT) protocol, the host (us)
+    // has to twiddle the lines to get the keyboard's attention, and then let the keyboard
+    // clock the bits at its own rate
+    // first wait for Clk to be high and any in-progress byte from the keyboard to finish arriving.
+    // The 100 msec is a sanity check timeout
+wait_for_idle_bus:
+    while (((PIND & (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN))) != (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN)) || bitcount) && (millis() - prev_ms <= 100))
+        /*spin*/;
+    if ((PIND & (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN))) != (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN)))
+        // Clk and Data aren't high; something is stuck and we can't send
+        return false;
+
+    // emulate the PS motherboard I scoped and wait 19 usec after Clk is high before starting
+    // Note that I don't really know if Clk just transitioned low->high, but just in case
+    _delay_us(19);
+    if ((PIND & (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN))) != (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN)) || (bitcount && (millis() - prev_ms <= 100)))
+        goto wait_for_idle_bus;
+    // OK at this point we believe the PS/2 bus is idle and we're going to grab it and go
+
+    // we pull Clk low, which inhibits the keyboard from sending
+    // while we do this we don't need/want an interrupt, so disable the Clk pin interrupt
+    EIMSK = 0; // disable INT0 (and all the other INTns, but we don't use them so that's fine)
+    (void)EIMSK; // wait until the change is effective (very grown up of us :-)
+    // switch Clk to be driven low while leaving Data as an pulled-up input
+    PORTD = _BV(PS2_DATA_PIN);
+    DDRD = _BV(PS2_CLK_PIN);
+    _delay_us(93); // emulate the PC I scoped and wait 93 usec before pulling data low as well
+    // pull Data low as well
+    PORTD = 0;
+    DDRD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
+    _delay_us(86); // emulate the PC I scoped and wait 86 usec before releasing data
+    // release Clk (which should float back high), and keep holding Data low (so the bus doesn't look idle)
+    PORTD = _BV(PS2_CLK_PIN);
+    DDRD = _BV(PS2_DATA_PIN);
+    // wait for the keyboard to drive Clk low. Every time the keyboard drives Clk low, feed it the next bit
+    // (the 0 we are driving now is considered the Start bit)
+    uint8_t parity = 1; // while we clock out the data bits, compute the parity bit
+	unsigned long start_ms = millis();
+	unsigned long now_ms = start_ms;
+    for (uint8_t n=0; n<10 && now_ms-start_ms < 100; n++) {
+        if (n == 8) {
+            // we're done with the data; next we send the parity bit and the stop bit
+            v = parity | 0x2;
+        }
+        // wait for Clk to go low
+        while (PIND & _BV(PS2_CLK_PIN) && (now_ms=millis()) - start_ms < 100) /* spin */;
+        // Clk went low; setup the next data bit
+        uint8_t bit = v&1;
+        parity ^= bit;
+        v >>= 1;
+        if (bit) {
+            // send a 1 by letting the Data line get pulled-up to high
+            PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
+            DDRD = 0;
+        } else {
+            // send a 0 by pullin the Data line low
+            PORTD = _BV(PS2_CLK_PIN);
+            DDRD = _BV(PS2_DATA_PIN);
+        }
+        // wait for Clk to go high (kbd samples Data on the Clk's low->high transition)
+        while (!(PIND & _BV(PS2_CLK_PIN)) && (now_ms=millis()) - start_ms < 100) /* spin */;
+    }
+    _delay_us(2); // hold Data at its last value just a little longer
+    // release Data (and Clk was and remains released), setting both back to pulled-up inputs
+    DDRD = 0; // all pins are inputs
+    PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN); // pull up both wires
+    if (now_ms - start_ms >= 100) {
+        // this transaction timed out
+fail:
+        EIMSK = _BV(INT0); // re-enable INT0 on the way out
+        return false;
+    }
+    // finally there will be a handshake from the keyboard to acknowlege the reception
+    // the keyboard is going to clock a 0 bit to us. Wait for it
+    while (PIND & _BV(PS2_CLK_PIN) && (now_ms=millis()) - start_ms < 100) /* spin */;
+    if (now_ms - start_ms >= 100)
+        goto fail;
+    // read the handshake Data bit
+    v = PIND & _BV(PS2_DATA_PIN);
+    if (v) {
+        // something didn't go right; the handshake should be a 0 bit
+        goto fail;
+    }
+    // handshake back by holding Clk low for long enough that the keyboard, which should release Clk soon, will notice
+    PORTD = _BV(PS2_DATA_PIN);
+    DDRD = _BV(PS2_CLK_PIN);
+    _delay_us(180);
+    // let Clk float back up high and we're done
+    DDRD = 0;
+    PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
+    EIMSK = _BV(INT0); // re-enable INT0
+    return true;
 }
 
 bool PS2Keyboard::available() {

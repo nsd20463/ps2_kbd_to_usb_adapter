@@ -1,5 +1,5 @@
 /*
- * code to use a ATmega32u4 as a PS/2 keyboard to USB keyboard converter, to allow using a good ole IBM Model M PS/2 keyboard with modern computers which now (2014) lack any PS/2 ports at all.
+ * code to use a ATmega32u4 as a PS/2 keyboard to USB keyboard converter, to allow using a good ole IBM Model M (or Northgate Omnikey Ultra) AT or PS/2 keyboard with modern computers which now (2014) lack any PS/2 ports at all.
  *
  * PS/2 protocol:
  * see: 
@@ -49,24 +49,40 @@
  *
  *  When computer send a byte to the keyboard I see
  *
- *          AB C D    E F G H
- *         ____        ___
- *   data      \______/   \___
- *                ____   _   
- *   clk   _/\___/    \_/ \_/
+ *          AB C D    E F G H    S T U VW XY   Z
+ *         ____        ___        ___   _________
+ *   data      \______/   \___.../   \_/
+ *                ____   _          _           _
+ *   clk   _/\___/    \_/ \_/....\_/ \_/\_/\___/
  *
  *          AB                19 usec clock high time before computer pulls clock low to request attention
  *           B-C              93 usec clock setup time before computer pulls data low too
- *             C-D            86 usec data low hold time  
+ *             C-D            86 usec data low hold time before clock is released
  *               D----E       346 usec wait until keyboard starts driving clock
  *                    E       note data and clock move quasi-simultaneously, with data being delayed by 1 or 2 usec
  *                    E-F     52 usec data setup time
  *                      F-G   52 usec data hold time
  *                        G-H 52 usec data setup time
  *                    E---G   104 usec pkt period
+ *   and at and after the stop bit, the handshake looks like
+ *                               S-T             46 usec low Clk pulse to clock in the stop bit
+ *                                 T-U           46 usec high Clk
+ *                                   U-V         46 usec low Clk and Data as the keyboard sends the Ack
+ *                                     VW        16 usec blip on Clk
+ *                                      W-X      136 usec Clk held low
+ *                                        XY     16 usec blip on Clk, again
+ *                                         Y---Z 188 usec Clk held low
+ *          A----------------------------------Z 1.4 msec
+ *  I have no idea what the blips on Clk are. Maybe the handoff of the Clk streching ack isn't perfect.
+ *  I hope I don't need to debounce :-)
  *
  *  And on this [long,hacked up] cable and keyboard and computer rising edges have a slow rise time of ~9 usec
- *  Note that these numbers are different than what other people report seeing from
+ *
+ *  Lastly the Northgate keyboard draws ~195 mA of current when idle, and more when the LEDs are lit. How much
+ *  more I cannot tell right now because my meter only goes to 200 mA. But a 1980's era green LED usually took
+ *  10 to 20 mA, so 3 of these would give a total current of ~260 mA.
+ *
+ *  Note that these timing numbers are different than what other people report seeing from
  *  their keyboards. Since the keyboard decides the clock rate it can very easily vary.
  *
  *   1 clock wire, open collector, pull-ups
@@ -155,21 +171,36 @@ int main(void) {
         }
         
         if (ps2k.raw_available()) {
-            int c = ps2k.raw_read();
+            uint8_t c = ps2k.raw_read();
 
-            uint8_t up = (c == 0xf0); // key up prefix
-            if (up) {
-                // wait for and fetch the key which is going up
-                while (!ps2k.raw_available());
-                c = ps2k.raw_read();
+            // display c on the LED
+            // a 1 bit will be shown as a steady lit LED
+            // a 0 bit as a dim LED
+            for (uint8_t i=0; i<8; i++) {
+              uint8_t bit = (c>>7);
+              c <<= 1;
+              PORTE |= 1<<6;
+              for (uint8_t j=1; j; j++) {
+                  _delay_us(500);
+                  if (!bit)
+                      PORTE ^= 1<<6;
+              }
+              PORTE &= ~(1<<6);
+              _delay_us(500);
+              _delay_us(500);
+              _delay_us(500);
+              _delay_us(500);
+              _delay_us(500);
+              _delay_us(500);
             }
 
+            static uint8_t up;
             if (c == 0x5a) {
-                // Enter-key
-
-                // set or clean the LED depending on the state of the Entry key
-                PORTE = (!up << 6);
+                // enter key; set all the lights to On while Enter is held down
+                ps2k.raw_write(0xed);
+                ps2k.raw_write(up?0:0x07);
             }
+            up = (c == 0xf0); // key up prefix
         }
     }
 }

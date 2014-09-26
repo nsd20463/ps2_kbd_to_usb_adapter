@@ -216,7 +216,8 @@ class PS2Keyboard {
 
     // same idea, but return the raw PS/2 codes rather than the digested ones
     static bool raw_available();
-    static int raw_read();
+    static uint8_t raw_read();
+    static bool raw_write(uint8_t v);
 };
 
 #endif
