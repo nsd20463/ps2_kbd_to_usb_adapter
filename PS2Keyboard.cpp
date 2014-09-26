@@ -88,7 +88,6 @@ ISR(INT0_vect)
         // not a proper start bit; ignore it
         return;
     }
-    PORTE ^= (1 << 6);
 
 	n = bitcount - 1;
 	if (n <= 7) { // note n is unsigned, so this skips both the start bit and the parity and stop bits

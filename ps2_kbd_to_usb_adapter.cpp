@@ -138,7 +138,7 @@ int main(void) {
 
     unsigned long prev_m = millis()>>8;
     while (1) {
-        if (0) {
+        if (1) {
             // sleep until there's something of interest
             set_sleep_mode(SLEEP_MODE_IDLE);
             sleep_enable();
@@ -168,7 +168,7 @@ int main(void) {
                 // Enter-key
 
                 // set or clean the LED depending on the state of the Entry key
-                //PORTE = (!up << 6);
+                PORTE = (!up << 6);
             }
         }
     }
