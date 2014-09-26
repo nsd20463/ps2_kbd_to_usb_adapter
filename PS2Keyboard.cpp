@@ -57,7 +57,8 @@ static uint8_t CharBuffer=0;
 static uint8_t UTF8next=0;
 static const PS2Keymap_t *keymap=NULL;
 
-// The ISR for the external interrupt
+// The ISR for the external interrupt,
+// which happens on the falling edge of the PS2 Clock signal
 ISR(INT0_vect)
 {
 	static uint8_t bitcount=0;
@@ -66,18 +67,32 @@ ISR(INT0_vect)
 	uint32_t now_ms;
 	uint8_t n, val;
 
+ 
     // read the data pin
     val = (PIND >> PS2_DATA_PIN) & 1;
 
 	now_ms = millis();
-	if (now_ms - prev_ms > 250) {
+	if (now_ms - prev_ms > 100) {
+        // it's been too long; start over
 		bitcount = 0;
 		incoming = 0;
 	}
 	prev_ms = now_ms;
+
+    // NOTE: the oscilloscope shows me that something is pulling Clk low for 240 usec every 250 msec, then releasing Clk, 
+    // without doing anything else.
+    // I don't know why, and I don't know whether it is the keyboard or the computer, but I need to ignore these.
+    // In addition, I need to figure out how to not have this interfere with a normal keystroke if it happens to start.
+    // Aha, since data floats high during this I know this isn't a proper start bit and I can ignore it.
+    if (bitcount == 0 && val) {
+        // not a proper start bit; ignore it
+        return;
+    }
+    PORTE ^= (1 << 6);
+
 	n = bitcount - 1;
-	if (n <= 7) {
-		incoming |= (val << n);
+	if (n <= 7) { // note n is unsigned, so this skips both the start bit and the parity and stop bits
+		incoming |= val << n;
 	}
 	bitcount++;
 	if (bitcount == 11) {
@@ -90,9 +105,10 @@ ISR(INT0_vect)
 		bitcount = 0;
 		incoming = 0;
 	}
+    // else check the parity bit for correctness?
 }
 
-static inline uint8_t get_scan_code(void)
+static uint8_t get_scan_code(void)
 {
 	uint8_t c, i;
 
@@ -232,6 +248,14 @@ static char get_iso8859_code(void)
 	}
 }
 
+bool PS2Keyboard::raw_available() {
+    return head != tail;
+}
+
+int PS2Keyboard::raw_read() {
+    return get_scan_code();
+}
+
 bool PS2Keyboard::available() {
 	if (CharBuffer || UTF8next) return true;
 	CharBuffer = get_iso8859_code();
@@ -266,11 +290,10 @@ void PS2Keyboard::begin(const PS2Keymap_t &map) {
 
   // initialize both clk and data to be pulled-up input pins
   DDRD = 0; // not really needed since the reset value is 0
-  PORTD |= _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
+  PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN); // pull up both wires
  
   // configure INT0 (PS2_CLK_PIN) on the falling edge
-  // DIEOE   DIEOV  DI 
-  EICRA |= _BV(ISC01); // interrupt on a falling edge of INT0 (assuming ISC00 is 0)
-  EIMSK |= _BV(INT0); // enable INT0
+  EICRA = _BV(ISC01); // interrupt on a falling edge of INT0 (assuming ISC00 is 0)
+  EIMSK = _BV(INT0); // enable INT0
 }
 

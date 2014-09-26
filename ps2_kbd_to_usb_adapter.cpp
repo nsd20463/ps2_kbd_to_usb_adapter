@@ -122,31 +122,53 @@
 PS2Keyboard ps2k;
 
 int main(void) {
+
+    // init timer0 sufficiently that TIMER0_OVF_vect() and thus millis() will work
+    TCCR0A = 0;
+    TCCR0B = _BV(CS00) | _BV(CS01); // /64 prescalar
+    TIMSK0 = _BV(TOIE0); // enable overflow interrupt
+
+    // make bit 6 (the LED) an output for testing/status
+    DDRE = (1<<6);
+
     ps2k.begin(PS2Keymap_US);
 
     // now that everything is setup, enable interrupts
     sei();
 
+    unsigned long prev_m = millis()>>8;
     while (1) {
-        // sleep until there's something of interest
-        set_sleep_mode(SLEEP_MODE_IDLE);
-        sleep_enable();
-        sleep_cpu();
-        // <sleeping>
-        sleep_disable();
-        
-        if (ps2k.available()) {
-            int c = ps2k.read();
+        if (0) {
+            // sleep until there's something of interest
+            set_sleep_mode(SLEEP_MODE_IDLE);
+            sleep_enable();
+            sleep_cpu();
+            // <sleeping>
+            sleep_disable();
+        }
 
-            // flash the LED to show the byte we got
-            DDRE = (1<<6); // make bit 6 (the LED) an output
-            for (uint8_t i=8; i; i--) {
-                uint8_t bit = (c>>7)&1;
-                c <<= 1;
-                PORTE = (bit<<6);
-                _delay_ms(25);
-                PORTE = 0x00;
-                _delay_ms(125);
+        unsigned long mm = millis()>>8;
+        if (prev_m != mm) {
+            // toggle LED to show millis() is working
+            //PORTE ^= (1 << 6);
+            prev_m = mm;
+        }
+        
+        if (ps2k.raw_available()) {
+            int c = ps2k.raw_read();
+
+            uint8_t up = (c == 0xf0); // key up prefix
+            if (up) {
+                // wait for and fetch the key which is going up
+                while (!ps2k.raw_available());
+                c = ps2k.raw_read();
+            }
+
+            if (c == 0x5a) {
+                // Enter-key
+
+                // set or clean the LED depending on the state of the Entry key
+                //PORTE = (!up << 6);
             }
         }
     }
@@ -190,7 +212,7 @@ unsigned long millis()
 #define FRACT_INC ((MICROSECONDS_PER_TIMER0_OVERFLOW % 1000) >> 3)
 #define FRACT_MAX (1000 >> 3)
 
-SIGNAL(TIMER0_OVF_vect) {
+ISR(TIMER0_OVF_vect) {
 	// copy these to local variables so they can be stored in registers
 	// (volatile variables must be read from memory on every access)
 	unsigned long m = timer0_millis;

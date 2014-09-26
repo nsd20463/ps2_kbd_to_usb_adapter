@@ -182,8 +182,6 @@ typedef struct {
 
 
 extern const PROGMEM PS2Keymap_t PS2Keymap_US;
-extern const PROGMEM PS2Keymap_t PS2Keymap_German;
-extern const PROGMEM PS2Keymap_t PS2Keymap_French;
 
 
 /**
@@ -215,6 +213,10 @@ class PS2Keyboard {
      * If there is no char availble, -1 is returned.
      */
     static int read();
+
+    // same idea, but return the raw PS/2 codes rather than the digested ones
+    static bool raw_available();
+    static int raw_read();
 };
 
 #endif
