@@ -180,19 +180,23 @@ int main(void) {
               uint8_t bit = (c>>7);
               c <<= 1;
               PORTE |= 1<<6;
-              for (uint8_t j=1; j; j++) {
-                  _delay_us(500);
+              for (uint8_t j=0; j<32; j++) {
+                  _delay_us(100);
+                  if (!bit)
+                      PORTE ^= 1<<6;
+                  _delay_us(9000);
                   if (!bit)
                       PORTE ^= 1<<6;
               }
               PORTE &= ~(1<<6);
-              _delay_us(500);
-              _delay_us(500);
-              _delay_us(500);
-              _delay_us(500);
-              _delay_us(500);
-              _delay_us(500);
+              // pause between bits
+              for (uint8_t j=0; j<100; j++)
+                _delay_us(500);
             }
+
+            // pause between bytes
+            for (uint8_t j=0; j<200; j++)
+              _delay_us(3000);
 
             static uint8_t up;
             if (c == 0x5a) {
