@@ -160,6 +160,7 @@ uint16_t CALLBACK_USB_GetDescriptor(const uint16_t val, const uint8_t idx, const
         case DTYPE_Configuration:
             d = &usb_config_desc;
             s = sizeof(usb_config_desc);
+            break;
         case DTYPE_String:
             { // see what string they want
                 uint8_t id = val & 0xff;
