@@ -82,10 +82,9 @@ ISR(INT0_vect)
 	prev_ms = now_ms;
 
     // NOTE: the oscilloscope shows me that something is pulling Clk low for 240 usec every 250 msec, then releasing Clk, 
-    // without doing anything else.
-    // I don't know why, and I don't know whether it is the keyboard or the computer, but I need to ignore these.
-    // In addition, I need to figure out how to not have this interfere with a normal keystroke if it happens to start.
-    // Aha, since data floats high during this I know this isn't a proper start bit and I can ignore it.
+    // without doing anything else (Data stays high). It turns out it is the computer. Maybe it is the protocol for some
+    // other device (PS/2 mouse?) Anyway I need to ignore these pulses.
+    // Aha, since data is high during these pulses I know this isn't a proper start bit and I can ignore it.
     if (n == 0 && val) {
         // not a proper start bit; ignore it
         return;
@@ -94,7 +93,9 @@ ISR(INT0_vect)
     bn = n-1;
 	if (bn < 8) { // note bn is unsigned, so this skips both the start bit and the parity and stop bits
 		incoming |= val << bn;
-	}
+	} else if (bn == 8) {
+        // check the parity bit for correctness?
+    }
     n++;
 	if (n == 11) {
 		uint8_t i = head + 1;
@@ -107,7 +108,6 @@ ISR(INT0_vect)
 		incoming = 0;
 	}
     bitcount = n;
-    // else check the parity bit for correctness?
 }
 
 static uint8_t get_scan_code(void)
@@ -283,18 +283,22 @@ wait_for_idle_bus:
     // while we do this we don't need/want an interrupt, so disable the Clk pin interrupt
     EIMSK = 0; // disable INT0 (and all the other INTns, but we don't use them so that's fine)
     (void)EIMSK; // wait until the change is effective (very grown up of us :-)
-    // switch Clk to be driven low while leaving Data as an pulled-up input
-    PORTD = _BV(PS2_DATA_PIN);
-    DDRD = _BV(PS2_CLK_PIN);
-    _delay_us(93); // emulate the PC I scoped and wait 93 usec before pulling data low as well
+    // switch Clk to be driven low while leaving Data as a pulled-up input
+    // Note that we switch by temporarily letting Clk float, which is better than temporarily driving it to high
+    PORTD = _BV(PS2_DATA_PIN); // keep pulling Data up
+    DDRD = _BV(PS2_CLK_PIN) | _BV(PS2_CLK_PIN+2); // drive Clk low
+    _delay_us(93); // emulate the PC I scoped and wait 93 usec before pulling data low as well. The IBM spec says Clk should be low for at least 60 usec
     // pull Data low as well
     PORTD = 0;
-    DDRD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
-    _delay_us(86); // emulate the PC I scoped and wait 86 usec before releasing data
+    DDRD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN) | _BV(PS2_CLK_PIN+2) | _BV(PS2_DATA_PIN+2);
+    _delay_us(86); // emulate the PC I scoped and wait 86 usec before releasing Clock
     // release Clk (which should float back high), and keep holding Data low (so the bus doesn't look idle)
+    // Note that we first stop driving Clk, then enable the pullup
+    DDRD = _BV(PS2_DATA_PIN) | _BV(PS2_DATA_PIN+2);
     PORTD = _BV(PS2_CLK_PIN);
-    DDRD = _BV(PS2_DATA_PIN);
     // wait for the keyboard to drive Clk low. Every time the keyboard drives Clk low, feed it the next bit
+    // Note the Northgate OmniKey Ultra I am using for test takes ~350 usec before it drives Clk low for the first bit
+    // The IBM spec says the keyboard should have been checking the bus no more than every 10 msec, so it might take 10 msec for the keyboard to notice
     // (the 0 we are driving now is considered the Start bit)
     uint8_t parity = 1; // while we clock out the data bits, compute the parity bit
 	unsigned long start_ms = millis();
@@ -312,17 +316,17 @@ wait_for_idle_bus:
         v >>= 1;
         if (bit) {
             // send a 1 by letting the Data line get pulled-up to high
-            PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
             DDRD = 0;
+            PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
         } else {
-            // send a 0 by pullin the Data line low
+            // send a 0 by pulling the Data line low
             PORTD = _BV(PS2_CLK_PIN);
-            DDRD = _BV(PS2_DATA_PIN);
+            DDRD = _BV(PS2_DATA_PIN) | _BV(PS2_DATA_PIN+2);
         }
         // wait for Clk to go high (kbd samples Data on the Clk's low->high transition)
         while (!(PIND & _BV(PS2_CLK_PIN)) && (now_ms=millis()) - start_ms < 100) /* spin */;
     }
-    _delay_us(2); // hold Data at its last value just a little longer
+    _delay_us(2); // hold Data at its last value (1) just a little longer
     // release Data (and Clk was and remains released), setting both back to pulled-up inputs
     DDRD = 0; // all pins are inputs
     PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN); // pull up both wires
@@ -334,7 +338,7 @@ fail:
     }
     // finally there will be a handshake from the keyboard to acknowlege the reception
     // the keyboard is going to clock a 0 bit to us. Wait for it
-    while (PIND & _BV(PS2_CLK_PIN) && (now_ms=millis()) - start_ms < 100) /* spin */;
+    while ((PIND & _BV(PS2_CLK_PIN)) && (now_ms=millis()) - start_ms < 100) /* spin */;
     if (now_ms - start_ms >= 100)
         goto fail;
     // read the handshake Data bit
@@ -343,13 +347,19 @@ fail:
         // something didn't go right; the handshake should be a 0 bit
         goto fail;
     }
-    // handshake back by holding Clk low for long enough that the keyboard, which should release Clk soon, will notice
-    PORTD = _BV(PS2_DATA_PIN);
-    DDRD = _BV(PS2_CLK_PIN);
-    _delay_us(180);
-    // let Clk float back up high and we're done
-    DDRD = 0;
-    PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
+    // some specs say you should handshake back by stretching the Clk pulse. However the IBM spec does not. The IBM spec
+    // says the transaction is done as soon as Data and Clk go back to high. I suspect what I see on the scope is the
+    // computer inhibiting the keyboard from sending while it processes the keystroke. We don't have that problem, so
+    // we're done (and the keyboard will release Clk when it is ready to)
+    if (0) {
+        // handshake back by holding Clk low for long enough that the keyboard, which should release Clk soon, will notice
+        PORTD = _BV(PS2_DATA_PIN);
+        DDRD = _BV(PS2_CLK_PIN);
+        _delay_us(180);
+        // let Clk float back up high and we're done
+        DDRD = 0;
+        PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
+    }
     EIMSK = _BV(INT0); // re-enable INT0
     return true;
 }

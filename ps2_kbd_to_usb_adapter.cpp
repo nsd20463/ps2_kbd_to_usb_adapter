@@ -149,10 +149,21 @@ int main(void) {
 
     ps2k.begin(PS2Keymap_US);
 
+    if (0) {
+        // for debug, display the clock pin on the LED
+        EIMSK = 0;
+        PORTD = 0;
+        DDRD = 0;
+        while (1) {
+            uint8_t b = (PIND>>PS2_CLK_PIN) & 1;
+            b = !b;
+            PORTE = b<<6;
+        }
+    }
+
     // now that everything is setup, enable interrupts
     sei();
 
-    unsigned long prev_m = millis()>>8;
     while (1) {
         if (1) {
             // sleep until there's something of interest
@@ -163,48 +174,63 @@ int main(void) {
             sleep_disable();
         }
 
-        unsigned long mm = millis()>>8;
-        if (prev_m != mm) {
+        if (0) {
             // toggle LED to show millis() is working
-            //PORTE ^= (1 << 6);
-            prev_m = mm;
+            static unsigned long prev_m;
+            unsigned long mm = millis()>>8;
+            if (prev_m != mm) {
+                PORTE ^= (1 << 6);
+                prev_m = mm;
+            }
         }
         
         if (ps2k.raw_available()) {
             uint8_t c = ps2k.raw_read();
 
-            // display c on the LED
-            // a 1 bit will be shown as a steady lit LED
-            // a 0 bit as a dim LED
-            for (uint8_t i=0; i<8; i++) {
-              uint8_t bit = (c>>7);
-              c <<= 1;
-              PORTE |= 1<<6;
-              for (uint8_t j=0; j<80; j++) {
-                  _delay_us(100);
-                  if (!bit)
-                      PORTE ^= 1<<6;
-                  _delay_us(10000);
-                  if (!bit)
-                      PORTE ^= 1<<6;
-              }
-              PORTE &= ~(1<<6);
-              // pause between bits
-              for (uint8_t j=0; j<250; j++)
-                _delay_us(500);
+            if (0) {
+                // display c on the LED
+                // a 1 bit will be shown as a steady lit LED
+                // a 0 bit as a dim LED
+                for (uint8_t i=0; i<8; i++) {
+                  uint8_t bit = (c>>7);
+                  c <<= 1;
+                  PORTE |= 1<<6;
+                  for (uint8_t j=0; j<80; j++) {
+                      _delay_us(100);
+                      if (!bit)
+                          PORTE ^= 1<<6;
+                      _delay_us(10000);
+                      if (!bit)
+                          PORTE ^= 1<<6;
+                  }
+                  PORTE &= ~(1<<6);
+                  // pause between bits
+                  for (uint8_t j=0; j<250; j++)
+                    _delay_us(500);
+                }
+
+                // pause between bytes
+                for (uint8_t j=0; j<200; j++)
+                  _delay_us(6000);
             }
 
-            // pause between bytes
-            for (uint8_t j=0; j<200; j++)
-              _delay_us(6000);
+            uint8_t up = (c == 0xf0); // key up prefix
+            if (up) {
+                while (!ps2k.raw_available());
+                c = ps2k.raw_read();
+            }
 
-            static uint8_t up;
             if (c == 0x5a) {
-                // enter key; set all the lights to On while Enter is held down
-                ps2k.raw_write(0xed);
-                ps2k.raw_write(up?0:0x07);
+                if (0) {
+                  // the Enter key; set all the keyboard lights to On while Enter is held down
+                  ps2k.raw_write(0xed);
+                  ps2k.raw_write(up?0:0x07);
+                }
+                if (up)
+                  PORTE = 0;
+                else
+                  PORTE = 1<<6;
             }
-            up = (c == 0xf0); // key up prefix
         }
     }
 }
