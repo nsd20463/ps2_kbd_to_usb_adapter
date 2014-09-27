@@ -24,9 +24,7 @@
 
 #define FIXED_NUM_CONFIGURATIONS 1 // we only have one USB device configuration
 
-//#define CONTROL_ONLY_DEVICE // we use only the HID_HOST_BOOT_PROTOCOL_ONLY, so we are very simple
-
-//#define INTERRUPT_CONTROL_ENDPOINT // REQUIRED, because in the PS/2 code, when we send commands to the PS/2 keyboard we are stuck in that code until the keyboard has clocked the bits from us, which takes an arbitrary amount of time.
+#define INTERRUPT_CONTROL_ENDPOINT // REQUIRED, because in the PS/2 code, when we send commands to the PS/2 keyboard we are stuck in that code until the keyboard has clocked the bits from us, which takes an arbitrary amount of time.
 
 #define NO_DEVICE_REMOTE_WAKEUP // for now I don't implement making the PS/2 keyboard wake up the PC. It might not be a great idea to ever do it given the power usage of these old keyboards at idle (~200 mA x 5V = 1 Watt)
 

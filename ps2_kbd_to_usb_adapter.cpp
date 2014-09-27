@@ -235,15 +235,7 @@ int main(void) {
     sei();
 
     while (1) {
-        if (USB_DeviceState == DEVICE_STATE_Configured) {
-            // if we have something to send over USB, do so
-            // if we have a message from the USB host, process it
-        }
-
-        USB_USBTask();
-
-
-        if (0) {
+        if (1) {
             // sleep until there's something of interest
             set_sleep_mode(SLEEP_MODE_IDLE);
             sleep_enable();
@@ -314,10 +306,17 @@ int main(void) {
                 }
             }
         }
+
+        if (USB_DeviceState == DEVICE_STATE_Configured) {
+            // if we have something to send over USB, do so
+            // if we have a message from the USB host, process it
+        }
+
+        // note we don't have to call USB_USBTask() since we've set INTERRUPT_CONTROL_ENDPOINT in LUFAConfig.h
     }
 }
 
-// pull in pieces of arduino standard library that we use
+// pull in pieces of arduino standard library that we need for millis() to work
 // (nice and quick and a dirty hack :-)
 
 
