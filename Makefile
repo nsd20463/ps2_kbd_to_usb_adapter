@@ -13,6 +13,7 @@ DEFINES = F_CPU=16000000
 CFLAGS = -mmcu=$(MCU) -Os -Wall $(DEFINES:%=-D%) $(INCDIRS:%=-I%)
 LDFLAGS = 
 
+HEADERS := $(wildcard *.h) # crude, yet effective enough for now
 OBJ = $(filter %.o, $(SRC:%.c=%.o) $(SRC:%.cpp=%.o))
 HEX = $(OUT:%.elf=%.hex)
 
@@ -22,11 +23,11 @@ CFLAGS += -fpack-struct -fshort-enums -funsigned-char -funsigned-bitfields
 all : $(OUT)
 
 # compile c
-%.o : %.c
+%.o : %.c $(HEADERS)
 	avr-gcc $(CFLAGS) -c $< -o $@
 
 # compile c++
-%.o : %.cpp
+%.o : %.cpp $(HEADERS)
 	avr-g++ $(CFLAGS) -c $< -o $@
 
 # link

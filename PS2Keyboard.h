@@ -39,6 +39,7 @@ unsigned long millis();
 // Note for this app the Clock pin is hardcoded to be INT0/PORTD0
 // and Data pin is hardcoded to be PORTD1 (For lack of better imagination)
 #define PS2_CLK_PIN  PD0
+#define PS2_CLK_INT  INT0 // must match PS2_CLK_PIN
 #define PS2_DATA_PIN PD1
 
 // Every call to read() returns a single byte for each

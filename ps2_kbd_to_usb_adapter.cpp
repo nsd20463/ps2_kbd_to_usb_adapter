@@ -165,7 +165,7 @@ int main(void) {
     sei();
 
     while (1) {
-        if (1) {
+        if (0) {
             // sleep until there's something of interest
             set_sleep_mode(SLEEP_MODE_IDLE);
             sleep_enable();
@@ -188,6 +188,11 @@ int main(void) {
             uint8_t c = ps2k.raw_read();
 
             if (0) {
+                // toggle LED on each byte
+                PORTE ^= 1<<6;
+            }
+
+            if (1) {
                 // display c on the LED
                 // a 1 bit will be shown as a steady lit LED
                 // a 0 bit as a dim LED
@@ -214,22 +219,24 @@ int main(void) {
                   _delay_us(6000);
             }
 
-            uint8_t up = (c == 0xf0); // key up prefix
-            if (up) {
-                while (!ps2k.raw_available());
-                c = ps2k.raw_read();
-            }
-
-            if (c == 0x5a) {
-                if (0) {
-                  // the Enter key; set all the keyboard lights to On while Enter is held down
-                  ps2k.raw_write(0xed);
-                  ps2k.raw_write(up?0:0x07);
+            if (0) {
+                uint8_t up = (c == 0xf0); // key up prefix
+                if (up) {
+                    while (!ps2k.raw_available());
+                    c = ps2k.raw_read();
                 }
-                if (up)
-                  PORTE = 0;
-                else
-                  PORTE = 1<<6;
+
+                if (c == 0x5a) {
+                    if (0) {
+                      // the Enter key; set all the keyboard lights to On while Enter is held down
+                      ps2k.raw_write(0xed);
+                      ps2k.raw_write(up?0:0x07);
+                    }
+                    if (up)
+                      PORTE = 0;
+                    else
+                      PORTE = 1<<6;
+                }
             }
         }
     }

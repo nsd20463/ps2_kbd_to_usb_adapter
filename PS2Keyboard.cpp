@@ -67,7 +67,6 @@ ISR(INT0_vect)
 	unsigned long now_ms;
 	uint8_t n, bn, val;
 
- 
     // read the data pin
     val = (PIND >> PS2_DATA_PIN) & 1;
 
@@ -333,7 +332,7 @@ wait_for_idle_bus:
     if (now_ms - start_ms >= 100) {
         // this transaction timed out
 fail:
-        EIMSK = _BV(INT0); // re-enable INT0 on the way out
+        EIMSK = _BV(PS2_CLK_INT); // re-enable INT0 on the way out
         return false;
     }
     // finally there will be a handshake from the keyboard to acknowlege the reception
@@ -360,7 +359,7 @@ fail:
         DDRD = 0;
         PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
     }
-    EIMSK = _BV(INT0); // re-enable INT0
+    EIMSK = _BV(PS2_CLK_INT); // re-enable INT0
     return true;
 }
 
@@ -400,8 +399,8 @@ void PS2Keyboard::begin(const PS2Keymap_t &map) {
   DDRD = 0; // not really needed since the reset value is 0
   PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN); // pull up both wires
  
-  // configure INT0 (PS2_CLK_PIN) on the falling edge
-  EICRA = _BV(ISC01); // interrupt on a falling edge of INT0 (assuming ISC00 is 0)
-  EIMSK = _BV(INT0); // enable INT0
+  // configure PS2_CLK_INT on the falling edge
+  EICRA = _BV(ISC01<<(2*PS2_CLK_INT)); // interrupt on a falling edge of INT0
+  EIMSK = _BV(PS2_CLK_INT); // enable INT0
 }
 
