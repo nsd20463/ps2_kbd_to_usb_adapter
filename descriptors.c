@@ -13,14 +13,14 @@ static const USB_Descriptor_Device_t PROGMEM usb_device_desc = {
 	.Endpoint0Size          = FIXED_CONTROL_ENDPOINT_SIZE,
 
 	.VendorID               = 0x03EB,
-	.ProductID              = 0x2042, // VID/PID are those donated by ATmega for the LUFA keyboard projects
+	.ProductID              = 0x2042, // VID/PID are those donated by ATmel for the LUFA keyboard projects
 	.ReleaseNumber          = VERSION_BCD(6,0,4), // ReleaseNumber can be anything you want. LUFA suggests using this field to destinguish different projects. I use the revision number from my Northgate just for yucks
 
 	.ManufacturerStrIndex   = 1,
 	.ProductStrIndex        = 2,
 	.SerialNumStrIndex      = 3, //NO_DESCRIPTOR,
 
-	.NumberOfConfigurations = FIXED_NUM_CONFIGURATIONS
+	.NumberOfConfigurations = FIXED_NUM_CONFIGURATIONS,
 };
 
 static const USB_Descriptor_HIDReport_Datatype_t PROGMEM usb_report_desc[] = {
@@ -92,7 +92,7 @@ static const struct {
 
 			.ConfigAttributes       = USB_CONFIG_ATTR_RESERVED, // bit 7 must be set for backwards compat with USB 1.0
 
-			.MaxPowerConsumption    = USB_CONFIG_POWER_MA(260) // it's a guess since my V-A meter doesn't measure more than 200mA in DC mode, but the Northgate keyboard uses 195 mA idle, and each 1908's-era green LED ought to use 10 to 20 mA. The ATmega32u4 uses nothing in comparison. Anyhow we don't want to guess too low here since a proper host will cut our power if we draw more than we said we would (not that all hosts do that, but some do and many ought to :-).
+			.MaxPowerConsumption    = USB_CONFIG_POWER_MA(250) // it's a guess since my V-A meter doesn't measure more than 200mA in DC mode, but the Northgate keyboard uses 195 mA idle, and each 1908's-era green LED ought to use 10 to 20 mA. The ATmega32u4 uses nothing in comparison. Anyhow we don't want to guess too low here since a proper host will cut our power if we draw more than we said we would (not that all hosts do that, but some do and many ought to :-).
 		},
 
 	.interface0 = {
@@ -115,7 +115,7 @@ static const struct {
 			.Header                 = { .Size = sizeof(USB_HID_Descriptor_HID_t), .Type = HID_DTYPE_HID },
 
 			.HIDSpec                = VERSION_BCD(1,1,0), // commercial keyboards report 1.10, so we do too
-			.CountryCode            = 33, // commercial keyboards have CC = 0 also, so it seems there is no need to fill this in, but the USB HID spec says 33d is "US"
+			.CountryCode            = 33, // commercial keyboards have CC = 0 also, so it seems there is no need to fill this in, but the USB HID spec says 33d is "US", and we are assuming a US layout for the PS/2 keyboard, so this seems right.
 			.TotalReportDescriptors = 1,
 			.HIDReportType          = HID_DTYPE_Report,
 			.HIDReportLength        = sizeof(usb_report_desc)
@@ -126,7 +126,7 @@ static const struct {
 			.EndpointAddress        = ENDPOINT_DIR_IN | 1, // endpoint #1 (#0 is always the control endpoint)
 			.Attributes             = EP_TYPE_INTERRUPT | ENDPOINT_USAGE_DATA, // we are a plain interrupt endpoint
 			.EndpointSize           = 8, // we send 8-byte reports, like commercial keyboards do
-			.PollingIntervalMS      = 1 // have the host poll us rapidly for keystrokes and our device has less keystroke latency. commercial keyboards usually have 10 msec polling intervals, but I think that is too much (plus PS/2 takes ~1msec to transfer a byte, and 1+2 bytes for key down+up, so in theory a fast ps/2 keyboard could send us keystrokes faster than USB would notice. not that that really happens (the ps/2 keyboards aren't running at wire rate and take leisurely pauses when sending))
+			.PollingIntervalMS      = 1, // have the host poll us rapidly for keystrokes and our device has less keystroke latency. commercial keyboards usually have 10 msec polling intervals, but I think that is too much (plus PS/2 takes ~1msec to transfer a byte, and 1+2 bytes for key down+up, so in theory a fast ps/2 keyboard could send us keystrokes faster than USB would notice. not that that really happens (the ps/2 keyboards aren't running at wire rate and take leisurely pauses when sending))
 		},
 };
 
