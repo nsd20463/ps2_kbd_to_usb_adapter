@@ -1,0 +1,219 @@
+
+# note: to see the report descriptors you need to unbind the device from the HID driver.
+# see http://www.slashdev.ca/2010/05/08/get-usb-report-descriptor-with-linux/
+# the general idea is to write the USB device path into /sys/bus/usb/drivers/usbhid/unbind like this:
+#     sudo bash -c "echo -n 1-2.1:1.0 >/sys/bus/usb/drivers/usbhid/unbind"
+# except with your path as seen in dmesg.
+# Note that this fancypants keyboard has two interfaces in it (as well as a USB 1.1 hub, which isn't
+# shown here). The first interface is a regular keyboard. The 2nd is for the media and other extra keys.
+# I'm not sure whether that is necessary, or just so the keyboard can be used as a media controller
+# when the full keyboard isn't utilized.
+
+
+Bus 001 Device 110: ID 04b3:301b IBM Corp. SK-8815 Keyboard
+Device Descriptor:
+  bLength                18
+  bDescriptorType         1
+  bcdUSB               1.10
+  bDeviceClass            0 (Defined at Interface level)
+  bDeviceSubClass         0 
+  bDeviceProtocol         0 
+  bMaxPacketSize0         8
+  idVendor           0x04b3 IBM Corp.
+  idProduct          0x301b SK-8815 Keyboard
+  bcdDevice            1.00
+  iManufacturer           1 Lite-On Technology
+  iProduct                3 USB Productivity Option Keyboard( has the hub in # 1 )
+  iSerial                 0 
+  bNumConfigurations      1
+  Configuration Descriptor:
+    bLength                 9
+    bDescriptorType         2
+    wTotalLength           59
+    bNumInterfaces          2
+    bConfigurationValue     1
+    iConfiguration          3 USB Productivity Option Keyboard( has the hub in # 1 )
+    bmAttributes         0xa0
+      (Bus Powered)
+      Remote Wakeup
+    MaxPower               44mA
+    Interface Descriptor:
+      bLength                 9
+      bDescriptorType         4
+      bInterfaceNumber        0
+      bAlternateSetting       0
+      bNumEndpoints           1
+      bInterfaceClass         3 Human Interface Device
+      bInterfaceSubClass      1 Boot Interface Subclass
+      bInterfaceProtocol      1 Keyboard
+      iInterface              3 USB Productivity Option Keyboard( has the hub in # 1 )
+        HID Device Descriptor:
+          bLength                 9
+          bDescriptorType        33
+          bcdHID               1.10
+          bCountryCode            0 Not supported
+          bNumDescriptors         1
+          bDescriptorType        34 Report
+          wDescriptorLength      65
+          Report Descriptor: (length is 65)
+            Item(Global): Usage Page, data= [ 0x01 ] 1
+                            Generic Desktop Controls
+            Item(Local ): Usage, data= [ 0x06 ] 6
+                            Keyboard
+            Item(Main  ): Collection, data= [ 0x01 ] 1
+                            Application
+            Item(Global): Usage Page, data= [ 0x07 ] 7
+                            Keyboard
+            Item(Local ): Usage Minimum, data= [ 0xe0 ] 224
+                            Control Left
+            Item(Local ): Usage Maximum, data= [ 0xe7 ] 231
+                            GUI Right
+            Item(Global): Logical Minimum, data= [ 0x00 ] 0
+            Item(Global): Logical Maximum, data= [ 0x01 ] 1
+            Item(Global): Report Size, data= [ 0x01 ] 1
+            Item(Global): Report Count, data= [ 0x08 ] 8
+            Item(Main  ): Input, data= [ 0x02 ] 2
+                            Data Variable Absolute No_Wrap Linear
+                            Preferred_State No_Null_Position Non_Volatile Bitfield
+            Item(Global): Report Count, data= [ 0x01 ] 1
+            Item(Global): Report Size, data= [ 0x08 ] 8
+            Item(Main  ): Input, data= [ 0x01 ] 1
+                            Constant Array Absolute No_Wrap Linear
+                            Preferred_State No_Null_Position Non_Volatile Bitfield
+            Item(Global): Report Count, data= [ 0x05 ] 5
+            Item(Global): Report Size, data= [ 0x01 ] 1
+            Item(Global): Usage Page, data= [ 0x08 ] 8
+                            LEDs
+            Item(Local ): Usage Minimum, data= [ 0x01 ] 1
+                            NumLock
+            Item(Local ): Usage Maximum, data= [ 0x05 ] 5
+                            Kana
+            Item(Main  ): Output, data= [ 0x02 ] 2
+                            Data Variable Absolute No_Wrap Linear
+                            Preferred_State No_Null_Position Non_Volatile Bitfield
+            Item(Global): Report Count, data= [ 0x01 ] 1
+            Item(Global): Report Size, data= [ 0x03 ] 3
+            Item(Main  ): Output, data= [ 0x01 ] 1
+                            Constant Array Absolute No_Wrap Linear
+                            Preferred_State No_Null_Position Non_Volatile Bitfield
+            Item(Global): Report Count, data= [ 0x06 ] 6
+            Item(Global): Report Size, data= [ 0x08 ] 8
+            Item(Global): Logical Minimum, data= [ 0x00 ] 0
+            Item(Global): Logical Maximum, data= [ 0xff 0x00 ] 255
+            Item(Global): Usage Page, data= [ 0x07 ] 7
+                            Keyboard
+            Item(Local ): Usage Minimum, data= [ 0x00 ] 0
+                            No Event
+            Item(Local ): Usage Maximum, data= [ 0xff 0x00 ] 255
+                            (null)
+            Item(Main  ): Input, data= [ 0x00 ] 0
+                            Data Array Absolute No_Wrap Linear
+                            Preferred_State No_Null_Position Non_Volatile Bitfield
+            Item(Main  ): End Collection, data=none
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x81  EP 1 IN
+        bmAttributes            3
+          Transfer Type            Interrupt
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0008  1x 8 bytes
+        bInterval              10
+    Interface Descriptor:
+      bLength                 9
+      bDescriptorType         4
+      bInterfaceNumber        1
+      bAlternateSetting       0
+      bNumEndpoints           1
+      bInterfaceClass         3 Human Interface Device
+      bInterfaceSubClass      0 No Subclass
+      bInterfaceProtocol      0 None
+      iInterface              3 USB Productivity Option Keyboard( has the hub in # 1 )
+        HID Device Descriptor:
+          bLength                 9
+          bDescriptorType        33
+          bcdHID               1.10
+          bCountryCode            0 Not supported
+          bNumDescriptors         1
+          bDescriptorType        34 Report
+          wDescriptorLength      77
+          Report Descriptor: (length is 77)
+            Item(Global): Usage Page, data= [ 0x0c ] 12
+                            Consumer
+            Item(Local ): Usage, data= [ 0x01 ] 1
+                            Consumer Control
+            Item(Main  ): Collection, data= [ 0x01 ] 1
+                            Application
+            Item(Global): Report ID, data= [ 0x03 ] 3
+            Item(Global): Report Count, data= [ 0x08 ] 8
+            Item(Global): Report Size, data= [ 0x01 ] 1
+            Item(Global): Logical Minimum, data= [ 0x00 ] 0
+            Item(Global): Logical Maximum, data= [ 0x01 ] 1
+            Item(Local ): Usage, data= [ 0xb5 ] 181
+                            Scan Next Track
+            Item(Local ): Usage, data= [ 0xb6 ] 182
+                            Scan Previous Track
+            Item(Local ): Usage, data= [ 0xb7 ] 183
+                            Stop
+            Item(Local ): Usage, data= [ 0x83 0x01 ] 387
+                            AL Consumer Control Configuration
+            Item(Local ): Usage, data= [ 0xcd ] 205
+                            Play/Pause
+            Item(Local ): Usage, data= [ 0xe2 ] 226
+                            Mute
+            Item(Local ): Usage, data= [ 0xe9 ] 233
+                            Volume Increment
+            Item(Local ): Usage, data= [ 0xea ] 234
+                            Volume Decrement
+            Item(Main  ): Input, data= [ 0x02 ] 2
+                            Data Variable Absolute No_Wrap Linear
+                            Preferred_State No_Null_Position Non_Volatile Bitfield
+            Item(Local ): Usage, data= [ 0x03 ] 3
+                            Programmable Buttons
+            Item(Main  ): Collection, data= [ 0x02 ] 2
+                            Logical
+            Item(Global): Usage Page, data= [ 0x09 ] 9
+                            Buttons
+            Item(Local ): Usage Minimum, data= [ 0x01 ] 1
+                            Button 1 (Primary)
+            Item(Local ): Usage Maximum, data= [ 0x08 ] 8
+                            (null)
+            Item(Main  ): Input, data= [ 0x02 ] 2
+                            Data Variable Absolute No_Wrap Linear
+                            Preferred_State No_Null_Position Non_Volatile Bitfield
+            Item(Main  ): End Collection, data=none
+            Item(Global): Usage Page, data= [ 0x0c ] 12
+                            Consumer
+            Item(Local ): Usage, data= [ 0x8a 0x01 ] 394
+                            AL Email Reader
+            Item(Local ): Usage, data= [ 0x24 0x02 ] 548
+                            AC Back
+            Item(Local ): Usage, data= [ 0x25 0x02 ] 549
+                            AC Forward
+            Item(Local ): Usage, data= [ 0x23 0x02 ] 547
+                            AC Home
+            Item(Local ): Usage, data= [ 0x21 0x02 ] 545
+                            AC Search
+            Item(Local ): Usage, data= [ 0x26 0x02 ] 550
+                            AC Stop
+            Item(Local ): Usage, data= [ 0x27 0x02 ] 551
+                            AC Refresh
+            Item(Local ): Usage, data= [ 0x2a 0x02 ] 554
+                            (null)
+            Item(Main  ): Input, data= [ 0x02 ] 2
+                            Data Variable Absolute No_Wrap Linear
+                            Preferred_State No_Null_Position Non_Volatile Bitfield
+            Item(Main  ): End Collection, data=none
+      Endpoint Descriptor:
+        bLength                 7
+        bDescriptorType         5
+        bEndpointAddress     0x82  EP 2 IN
+        bmAttributes            3
+          Transfer Type            Interrupt
+          Synch Type               None
+          Usage Type               Data
+        wMaxPacketSize     0x0004  1x 4 bytes
+        bInterval             255
+Device Status:     0x0000
+  (Bus Powered)

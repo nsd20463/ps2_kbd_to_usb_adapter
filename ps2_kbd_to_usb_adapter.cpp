@@ -134,6 +134,7 @@
  */
 
 #include "PS2Keyboard.h"
+#include <LUFA/Drivers/USB/USB.h>
 
 PS2Keyboard ps2k;
 
@@ -178,6 +179,8 @@ static void die_blinking(uint8_t c) {
     }
 }
 
+//-------------------------------------------------------------------------
+
 int main(void) {
 
     // init timer0 sufficiently that TIMER0_OVF_vect() and thus millis() will work
@@ -189,6 +192,8 @@ int main(void) {
     DDRE = (1<<6);
 
     ps2k.begin(PS2Keymap_US);
+
+    USB_Init();
 
     if (0) {
         // for debug, display the USB registers
@@ -230,6 +235,14 @@ int main(void) {
     sei();
 
     while (1) {
+        if (USB_DeviceState == DEVICE_STATE_Configured) {
+            // if we have something to send over USB, do so
+            // if we have a message from the USB host, process it
+        }
+
+        USB_USBTask();
+
+
         if (0) {
             // sleep until there's something of interest
             set_sleep_mode(SLEEP_MODE_IDLE);
