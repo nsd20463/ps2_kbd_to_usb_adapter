@@ -18,13 +18,13 @@
 
 #define NO_INTERNAL_SERIAL // the ATmega doesn't have any built-in serial or ID number
 
-#define FIXED_CONTROL_ENDPOINT_SIZE 8 // we'll use the usual value
+#define FIXED_CONTROL_ENDPOINT_SIZE 8 // we'll use the usual value for the control endpoint
 
 #define DEVICE_STATE_AS_GPIOR 2 // we don't use GPIOR2 in our code, so LUFA can go ahead and use it
 
 #define FIXED_NUM_CONFIGURATIONS 1 // we only have one USB device configuration
 
-#define CONTROL_ONLY_DEVICE // we use only the HID_HOST_BOOT_PROTOCOL_ONLY, so we are very simple
+//#define CONTROL_ONLY_DEVICE // we use only the HID_HOST_BOOT_PROTOCOL_ONLY, so we are very simple
 
 //#define INTERRUPT_CONTROL_ENDPOINT // REQUIRED, because in the PS/2 code, when we send commands to the PS/2 keyboard we are stuck in that code until the keyboard has clocked the bits from us, which takes an arbitrary amount of time.
 
