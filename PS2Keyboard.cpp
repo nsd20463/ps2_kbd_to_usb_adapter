@@ -285,15 +285,15 @@ wait_for_idle_bus:
     // switch Clk to be driven low while leaving Data as a pulled-up input
     // Note that we switch by temporarily letting Clk float, which is better than temporarily driving it to high
     PORTD = _BV(PS2_DATA_PIN); // keep pulling Data up
-    DDRD = _BV(PS2_CLK_PIN) | _BV(PS2_CLK_PIN+2); // drive Clk low
+    DDRD = _BV(PS2_CLK_PIN); // drive Clk low
     _delay_us(93); // emulate the PC I scoped and wait 93 usec before pulling data low as well. The IBM spec says Clk should be low for at least 60 usec
     // pull Data low as well
     PORTD = 0;
-    DDRD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN) | _BV(PS2_CLK_PIN+2) | _BV(PS2_DATA_PIN+2);
+    DDRD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
     _delay_us(86); // emulate the PC I scoped and wait 86 usec before releasing Clock
     // release Clk (which should float back high), and keep holding Data low (so the bus doesn't look idle)
     // Note that we first stop driving Clk, then enable the pullup
-    DDRD = _BV(PS2_DATA_PIN) | _BV(PS2_DATA_PIN+2);
+    DDRD = _BV(PS2_DATA_PIN);
     PORTD = _BV(PS2_CLK_PIN);
     // wait for the keyboard to drive Clk low. Every time the keyboard drives Clk low, feed it the next bit
     // Note the Northgate OmniKey Ultra I am using for test takes ~350 usec before it drives Clk low for the first bit
@@ -320,7 +320,7 @@ wait_for_idle_bus:
         } else {
             // send a 0 by pulling the Data line low
             PORTD = _BV(PS2_CLK_PIN);
-            DDRD = _BV(PS2_DATA_PIN) | _BV(PS2_DATA_PIN+2);
+            DDRD = _BV(PS2_DATA_PIN);
         }
         // wait for Clk to go high (kbd samples Data on the Clk's low->high transition)
         while (!(PIND & _BV(PS2_CLK_PIN)) && (now_ms=millis()) - start_ms < 100) /* spin */;
