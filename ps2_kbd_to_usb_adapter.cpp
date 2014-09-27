@@ -191,7 +191,31 @@ int main(void) {
     ps2k.begin(PS2Keymap_US);
 
     if (0) {
-        // for debug, display the clock pin on the LED
+        // for debug, display the USB registers
+        blink_byte(UHWCON);
+        blink_byte(USBCON);
+        blink_byte(USBSTA);
+        blink_byte(USBINT);
+        blink_byte(UDCON);
+        blink_byte(UDINT);
+        blink_byte(UDIEN);
+        blink_byte(UDADDR);
+        blink_byte(UDFNUMH);
+        blink_byte(UDFNUML);
+        blink_byte(UDMFN);
+        blink_byte(UENUM);
+        blink_byte(UERST);
+        blink_byte(UECONX);
+        blink_byte(UECFG0X);
+        blink_byte(UESTA0X);
+        blink_byte(UESTA1X);
+        blink_byte(UEINTX);
+        blink_byte(UEIENX);
+        blink_byte(UEINT);
+    }
+
+    if (0) {
+        // for debug, display the PS2 clock pin on the LED
         EIMSK = 0;
         PORTD = 0;
         DDRD = 0;
