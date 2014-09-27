@@ -137,15 +137,46 @@
 
 PS2Keyboard ps2k;
 
-static void failure(void) {
-    // die blinking
-    DDRE = (1<<6);
-    while (1) {
-        _delay_us(25000);
-        PORTE ^= 1<<6;
+// blink the byte c on the LED slow and noticeably enough that a human can write it down
+static void blink_byte(uint8_t c) {
+    // display c on the LED
+    // a 1 bit will be shown as a steady lit LED
+    // a 0 bit as a dim LED
+    for (uint8_t i=0; i<8; i++) {
+      uint8_t bit = (c>>7);
+      c <<= 1;
+      PORTE |= 1<<6;
+      for (uint8_t j=0; j<80; j++) {
+          _delay_us(100);
+          if (!bit)
+              PORTE ^= 1<<6;
+          _delay_us(10000);
+          if (!bit)
+              PORTE ^= 1<<6;
+      }
+      PORTE &= ~(1<<6);
+      // pause between bits
+      for (uint8_t j=0; j<250; j++)
+        _delay_us(500);
     }
+
+    // pause between bytes
+    for (uint8_t j=0; j<200; j++)
+      _delay_us(6000);
 }
 
+// die, blinking out the debug byte every 4 seconds, and blinking rapidly the rest of the time
+static void die_blinking(uint8_t c) {
+    DDRE = (1<<6);
+    while (1) {
+        unsigned long start = millis();
+        while (millis()-start < 4000) {
+          _delay_us(25000);
+          PORTE ^= 1<<6;
+        }
+        blink_byte(c);
+    }
+}
 
 int main(void) {
 
@@ -203,30 +234,7 @@ int main(void) {
             }
 
             if (0) {
-                // display c on the LED
-                // a 1 bit will be shown as a steady lit LED
-                // a 0 bit as a dim LED
-                for (uint8_t i=0; i<8; i++) {
-                  uint8_t bit = (c>>7);
-                  c <<= 1;
-                  PORTE |= 1<<6;
-                  for (uint8_t j=0; j<80; j++) {
-                      _delay_us(100);
-                      if (!bit)
-                          PORTE ^= 1<<6;
-                      _delay_us(10000);
-                      if (!bit)
-                          PORTE ^= 1<<6;
-                  }
-                  PORTE &= ~(1<<6);
-                  // pause between bits
-                  for (uint8_t j=0; j<250; j++)
-                    _delay_us(500);
-                }
-
-                // pause between bytes
-                for (uint8_t j=0; j<200; j++)
-                  _delay_us(6000);
+                blink_byte(c);
             }
 
             if (1) {
@@ -239,22 +247,24 @@ int main(void) {
                 if (c == 0x5a) {
                     if (1) {
                       // the Enter key; set all the keyboard lights to On while Enter is held down
-                      _delay_us(3000);
+                      _delay_us(1000);
                       if (ps2k.raw_write(0xed)) {
-                          if (0) {
+                          if (1) {
                               while (!ps2k.raw_available());
-                              if (ps2k.raw_read() != 0xFA) {
+                              uint8_t fa = ps2k.raw_read();
+                              if (fa != 0xFA) {
                                 // we should have received an ACK byte
-                                failure();
+                                die_blinking(fa);
                               }
                           }
-                          _delay_us(3000);
+                          _delay_us(1000);
                           if (ps2k.raw_write(up?0:0x07)) {
                               if (0) {
                                   while (!ps2k.raw_available());
-                                  if (ps2k.raw_read() != 0xFA) {
+                                  uint8_t fa = ps2k.raw_read();
+                                  if (fa != 0xFA) {
                                     // we should have received an ACK byte
-                                    failure();
+                                    die_blinking(fa);
                                   }
                               }
                           }

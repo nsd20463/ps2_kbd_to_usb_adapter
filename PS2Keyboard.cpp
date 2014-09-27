@@ -257,6 +257,11 @@ uint8_t PS2Keyboard::raw_read() {
     return get_scan_code();
 }
 
+// return true if PS2 bus is idle
+static inline bool idle() {
+    return (PIND & (_BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN))) == (_BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN));
+}
+
 // send a byte to the keyboard
 bool PS2Keyboard::raw_write(uint8_t v) {
     // to send a byte to the keyboard over the PS/2 (aka AT) protocol, the host (us)
@@ -271,7 +276,7 @@ bool PS2Keyboard::raw_write(uint8_t v) {
 wait_for_idle_bus:
 	unsigned long start_ms = millis();
 	unsigned long now_ms = start_ms;
-    while (((PIND & (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN))) != (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN)) || (bitcount && now_ms - prev_ms <= 100)) && now_ms - start_ms <= 100)
+    while ((!idle() || (bitcount && now_ms - prev_ms <= 100)) && now_ms - start_ms <= 100)
         now_ms = millis(); // spin
 
     if ((PIND & (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN))) != (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN)))
@@ -366,6 +371,19 @@ fail:
         DDRD = 0;
         PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
     }
+
+    if (0) {
+    // wait for the bus to be back to idle state before returning
+    while (!idle() && now_ms - start_ms <= 100)
+        now_ms = millis(); // spin
+
+    if (!idle()) {
+        // Clk and Data aren't high; something is stuck
+        return false;
+    }
+    }
+
+    EIFR = _BV(PS2_CLK_INT); // ack away the pending INT0 (which happened because we caused falling edges on Clk when sending, so an INT0 is, at this point, pending)
     EIMSK = _BV(PS2_CLK_INT); // re-enable INT0
     return true;
 }
