@@ -21,6 +21,10 @@ OPTIMIZATION = s
 SRC += $(LUFA_SRC_USB) $(LUFA_SRC_USBCLASS)
 # path to LUFA library. Override the default by setting it in your environment or make commandline
 LUFA_PATH ?= ../libraries/lufa_LUFA_140302/LUFA
+# defines for lufa_avrdude.mk so it can talk to the Adafruit ATmega32u4's bootstrap
+AVRDUDE_PROGRAMMER ?= avr109
+AVRDUDE_PORT ?= /dev/ttyACM0
+
 
 # <not needed/done by the LUFA build system for us> DEFINES = F_CPU=$(F_CPU)
 DEFINES += USE_LUFA_CONFIG_HEADER # specify the LUFA library settings in LUFAConfig.h rather than as a bunch of defines in this makefile
