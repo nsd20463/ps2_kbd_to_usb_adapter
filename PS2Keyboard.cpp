@@ -263,10 +263,17 @@ bool PS2Keyboard::raw_write(uint8_t v) {
     // has to twiddle the lines to get the keyboard's attention, and then let the keyboard
     // clock the bits at its own rate
     // first wait for Clk to be high and any in-progress byte from the keyboard to finish arriving.
+    // note that since the keyboard sends Ack bytes (0xFA) after most command bytes, there is likely an FA being received
+    // at the same time that we are trying to send the 2nd byte of a multi-byte command.
+    // We usually are in a  race with the keyboard to see who sends first when it comes time for us to send the 2nd byte. 
+    // The keyboard will skip sending the FA if we overwrite the keyboard (say the IBM spec).
     // The 100 msec is a sanity check timeout
 wait_for_idle_bus:
-    while (((PIND & (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN))) != (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN)) || bitcount) && (millis() - prev_ms <= 100))
-        /*spin*/;
+	unsigned long start_ms = millis();
+	unsigned long now_ms = start_ms;
+    while (((PIND & (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN))) != (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN)) || (bitcount && now_ms - prev_ms <= 100)) && now_ms - start_ms <= 100)
+        now_ms = millis(); // spin
+
     if ((PIND & (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN))) != (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN)))
         // Clk and Data aren't high; something is stuck and we can't send
         return false;
@@ -279,12 +286,12 @@ wait_for_idle_bus:
     // OK at this point we believe the PS/2 bus is idle and we're going to grab it and go
 
     // we pull Clk low, which inhibits the keyboard from sending
-    // while we do this we don't need/want an interrupt, so disable the Clk pin interrupt
+    // while we do this we don't want an interrupt since we'd only read what we are writing, so disable the Clk pin interrupt
     EIMSK = 0; // disable INT0 (and all the other INTns, but we don't use them so that's fine)
-    (void)EIMSK; // wait until the change is effective (very grown up of us :-)
+    (void)EIMSK; // wait until the change is effective (how very grown up of us :-)
     // switch Clk to be driven low while leaving Data as a pulled-up input
     // Note that we switch by temporarily letting Clk float, which is better than temporarily driving it to high
-    PORTD = _BV(PS2_DATA_PIN); // keep pulling Data up
+    PORTD = _BV(PS2_DATA_PIN); // keep pulling Data up, but release Clk
     DDRD = _BV(PS2_CLK_PIN); // drive Clk low
     _delay_us(93); // emulate the PC I scoped and wait 93 usec before pulling data low as well. The IBM spec says Clk should be low for at least 60 usec
     // pull Data low as well
@@ -300,8 +307,8 @@ wait_for_idle_bus:
     // The IBM spec says the keyboard should have been checking the bus no more than every 10 msec, so it might take 10 msec for the keyboard to notice
     // (the 0 we are driving now is considered the Start bit)
     uint8_t parity = 1; // while we clock out the data bits, compute the parity bit
-	unsigned long start_ms = millis();
-	unsigned long now_ms = start_ms;
+	start_ms = millis();
+	now_ms = start_ms;
     for (uint8_t n=0; n<10 && now_ms-start_ms < 100; n++) {
         if (n == 8) {
             // we're done with the data; next we send the parity bit and the stop bit
@@ -325,8 +332,8 @@ wait_for_idle_bus:
         // wait for Clk to go high (kbd samples Data on the Clk's low->high transition)
         while (!(PIND & _BV(PS2_CLK_PIN)) && (now_ms=millis()) - start_ms < 100) /* spin */;
     }
-    _delay_us(2); // hold Data at its last value (1) just a little longer
     // release Data (and Clk was and remains released), setting both back to pulled-up inputs
+    // note that since Data is released (and thus a 1, since it is the Stop bit) no setup/hold violation occurs at the keyboard side as it clocks in the Stop bit
     DDRD = 0; // all pins are inputs
     PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN); // pull up both wires
     if (now_ms - start_ms >= 100) {
@@ -346,7 +353,7 @@ fail:
         // something didn't go right; the handshake should be a 0 bit
         goto fail;
     }
-    // some specs say you should handshake back by stretching the Clk pulse. However the IBM spec does not. The IBM spec
+    // some specs say you should handshake back by stretching the Clk pulse. However the IBM spec does not say this. The IBM spec
     // says the transaction is done as soon as Data and Clk go back to high. I suspect what I see on the scope is the
     // computer inhibiting the keyboard from sending while it processes the keystroke. We don't have that problem, so
     // we're done (and the keyboard will release Clk when it is ready to)

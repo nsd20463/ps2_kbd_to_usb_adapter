@@ -137,6 +137,16 @@
 
 PS2Keyboard ps2k;
 
+static void failure(void) {
+    // die blinking
+    DDRE = (1<<6);
+    while (1) {
+        _delay_us(25000);
+        PORTE ^= 1<<6;
+    }
+}
+
+
 int main(void) {
 
     // init timer0 sufficiently that TIMER0_OVF_vect() and thus millis() will work
@@ -192,7 +202,7 @@ int main(void) {
                 PORTE ^= 1<<6;
             }
 
-            if (1) {
+            if (0) {
                 // display c on the LED
                 // a 1 bit will be shown as a steady lit LED
                 // a 0 bit as a dim LED
@@ -219,7 +229,7 @@ int main(void) {
                   _delay_us(6000);
             }
 
-            if (0) {
+            if (1) {
                 uint8_t up = (c == 0xf0); // key up prefix
                 if (up) {
                     while (!ps2k.raw_available());
@@ -227,10 +237,28 @@ int main(void) {
                 }
 
                 if (c == 0x5a) {
-                    if (0) {
+                    if (1) {
                       // the Enter key; set all the keyboard lights to On while Enter is held down
-                      ps2k.raw_write(0xed);
-                      ps2k.raw_write(up?0:0x07);
+                      _delay_us(3000);
+                      if (ps2k.raw_write(0xed)) {
+                          if (0) {
+                              while (!ps2k.raw_available());
+                              if (ps2k.raw_read() != 0xFA) {
+                                // we should have received an ACK byte
+                                failure();
+                              }
+                          }
+                          _delay_us(3000);
+                          if (ps2k.raw_write(up?0:0x07)) {
+                              if (0) {
+                                  while (!ps2k.raw_available());
+                                  if (ps2k.raw_read() != 0xFA) {
+                                    // we should have received an ACK byte
+                                    failure();
+                                  }
+                              }
+                          }
+                      }
                     }
                     if (up)
                       PORTE = 0;
