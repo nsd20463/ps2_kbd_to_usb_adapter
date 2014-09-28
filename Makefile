@@ -43,7 +43,11 @@ all:
 flash : $(TARGET).hex
 	avrdude -p m32u4 -P /dev/ttyACM0 -c avr109 -U flash:w:$<:i
 
-# pull in the LUFA bits we use
+# rebuild ctags
+tags :
+	ctags -R . $(LUFA_PATH)/LUFA/ /usr/share/arduino/hardware/arduino/
+
+# pull in the LUFA make system bits we use
 include $(LUFA_PATH)/Build/lufa_core.mk
 include $(LUFA_PATH)/Build/lufa_sources.mk
 include $(LUFA_PATH)/Build/lufa_hid.mk
@@ -52,4 +56,4 @@ include $(LUFA_PATH)/Build/lufa_build.mk
 include $(LUFA_PATH)/Build/lufa_avrdude.mk
 
 
-.PHONY : all flash 
+.PHONY : all flash tags
