@@ -127,7 +127,8 @@ static const struct {
             .EndpointAddress        = ENDPOINT_DIR_IN | 1, // endpoint #1 (#0 is always the control endpoint)
             .Attributes             = EP_TYPE_INTERRUPT | ENDPOINT_USAGE_DATA, // we are a plain interrupt endpoint
             .EndpointSize           = 8, // we send 8-byte reports, like commercial keyboards do
-            .PollingIntervalMS      = 1, // have the host poll us rapidly for keystrokes and our device has less keystroke latency. commercial keyboards usually have 10 msec polling intervals, but I think that is too much (plus PS/2 takes ~1msec to transfer a byte, and 1+2 bytes for key down+up, so in theory a fast ps/2 keyboard could send us keystrokes faster than USB would notice. not that that really happens (the ps/2 keyboards aren't running at wire rate and take leisurely pauses when sending))
+            .PollingIntervalMS      = 2, // have the host poll us rapidly for keystrokes and our device has less keystroke latency. commercial keyboards usually have 10 msec polling intervals, but I think that is too much (plus PS/2 takes ~1msec to transfer a byte, and 1+2 bytes for key down+up, so in theory a fast ps/2 keyboard could send us keystrokes faster than USB would notice. not that that really happens (the ps/2 keyboards aren't running at wire rate and take leisurely pauses when sending))
+                                         // note that the higher the polling rate the more parity errors I see on the PS/2 bus. there must be some interrupt code in the USB side which is taking > 50 usec to run, but that's the price. Even with the typical [for a keyboard] 10msec polling I get a parity error once in a while when typing rapidly.
         },
 };
 
