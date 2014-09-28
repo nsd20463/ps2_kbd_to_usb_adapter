@@ -213,15 +213,17 @@ fail:
         PORTD = _BV(PS2_CLK_PIN) | _BV(PS2_DATA_PIN);
     }
 
+    // waiting for the bus to go idle is unnecessary. we might as well
+    // move on while the keyboard gets its stuff together
     if (0) {
-    // wait for the bus to be back to idle state before returning
-    while (!idle() && now_ms - start_ms <= 100)
-        now_ms = millis(); // spin
+        // wait for the bus to be back to idle state before returning
+        while (!idle() && now_ms - start_ms <= 100)
+            now_ms = millis(); // spin
 
-    if (!idle()) {
-        // Clk and Data aren't high; something is stuck
-        return 0;
-    }
+        if (!idle()) {
+            // Clk and Data aren't high; something is stuck
+            return 0;
+        }
     }
 
     EIFR = _BV(PS2_CLK_INT); // ack away the pending INT0 (which happened because we caused falling edges on Clk when sending, so an INT0 is, at this point, pending)
@@ -240,7 +242,7 @@ void ps2_set_scan_set(uint8_t v) {
 
 void ps2_write2(uint8_t a, uint8_t b) {
     if (ps2_write(a)) {
-        if (1) {
+        if (0) {
             // wait for the ACK byte before sending the next byte
             while (!ps2_available());
             uint8_t fa = ps2_read();

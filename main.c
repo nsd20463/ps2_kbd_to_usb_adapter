@@ -316,42 +316,6 @@ int main(void) {
 
     USB_Init();
     
-    if (0) {
-        // for debug, display the USB registers
-        blink_byte(UHWCON);
-        blink_byte(USBCON);
-        blink_byte(USBSTA);
-        blink_byte(USBINT);
-        blink_byte(UDCON);
-        blink_byte(UDINT);
-        blink_byte(UDIEN);
-        blink_byte(UDADDR);
-        blink_byte(UDFNUMH);
-        blink_byte(UDFNUML);
-        blink_byte(UDMFN);
-        blink_byte(UENUM);
-        blink_byte(UERST);
-        blink_byte(UECONX);
-        blink_byte(UECFG0X);
-        blink_byte(UESTA0X);
-        blink_byte(UESTA1X);
-        blink_byte(UEINTX);
-        blink_byte(UEIENX);
-        blink_byte(UEINT);
-    }
-
-    if (0) {
-        // for debug, display the PS2 clock pin on the LED
-        EIMSK = 0;
-        PORTD = 0;
-        DDRD = 0;
-        while (1) {
-            uint8_t b = (PIND>>PS2_CLK_PIN) & 1;
-            b = !b;
-            PORTE = b<<6;
-        }
-    }
-
     // now that everything is setup, enable interrupts
     sei();
 
@@ -368,7 +332,7 @@ int main(void) {
     PORTE = 0;
 
     while (1) {
-        if (0) {
+        if (1) {
             // sleep until there's something of interest
             set_sleep_mode(SLEEP_MODE_IDLE);
             sleep_enable();
@@ -377,42 +341,16 @@ int main(void) {
             sleep_disable();
         }
 
-        if (0) {
-            // toggle LED to show millis() is working
-            static unsigned long prev_m;
-            unsigned long mm = millis()>>8;
-            if (prev_m != mm) {
-                PORTE ^= (1 << 6);
-                prev_m = mm;
-            }
-        }
-        
         ps2_tick();
 
         if (ps2_available()) {
             uint8_t c = ps2_read();
-
-            if (0) {
-                // toggle LED on each byte
-                PORTE ^= 1<<6;
-            }
-
-            if (0) {
-                blink_byte(c);
-            }
 
             if (1) {
                 uint8_t up = (c == 0xf0); // key up prefix
                 if (up) {
                     while (!ps2_available());
                     c = ps2_read();
-                }
-
-                if (0) {
-                    if (up)
-                      PORTE = 0;
-                    else
-                      PORTE = 1<<6;
                 }
 
                 if (1) {
