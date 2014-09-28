@@ -167,10 +167,9 @@ static void blink_byte(uint8_t c) {
 
 // die, blinking out the debug byte every 4 seconds, and blinking rapidly the rest of the time
 void die_blinking(uint8_t c) {
-    DDRE = (1<<6);
+    DDRE |= (1<<6);
     while (1) {
-        unsigned long start = millis();
-        while (millis()-start < 4000) {
+        for (uint16_t i=0; i<4*40; i++) {
           _delay_us(25000);
           PORTE ^= 1<<6;
         }
@@ -409,19 +408,7 @@ int main(void) {
                     c = ps2_read();
                 }
 
-                if (c == 0x5a) {
-                    if (0) {
-                      // the Enter key; set all the keyboard lights to On while Enter is held down
-                      _delay_us(1000);
-                      ps2_write2(0xed, up?0:0x07);
-                    }
-                    if (up)
-                      PORTE = 0;
-                    else
-                      PORTE = 1<<6;
-                }
-
-                if (1) {
+                if (0) {
                     if (up)
                       PORTE = 0;
                     else
