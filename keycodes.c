@@ -126,7 +126,7 @@ static const uint8_t PROGMEM simple_ps2_to_usb_map[] = {
 uint8_t ps2_to_usb_keycode(uint8_t pc) {
     uint8_t uc;
     if (pc < sizeof(simple_ps2_to_usb_map)) {
-        uc = simple_ps2_to_usb_map[pc];
+        uc = pgm_read_byte(&simple_ps2_to_usb_map[pc]);
         if (uc)
             return uc;
     }
