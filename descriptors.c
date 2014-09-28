@@ -3,24 +3,24 @@
 #include <LUFA/Drivers/USB/USB.h>
 
 static const USB_Descriptor_Device_t PROGMEM usb_device_desc = {
-	.Header                 = {.Size = sizeof(USB_Descriptor_Device_t), .Type = DTYPE_Device},
+    .Header                 = {.Size = sizeof(USB_Descriptor_Device_t), .Type = DTYPE_Device},
 
-	.USBSpecification       = VERSION_BCD(1,1,0), // we implement USB 1.10 spec (no need to go newer than that and loose compatability with old hosts)
-	.Class                  = USB_CSCP_NoDeviceClass, // our classes are at the interface level, like commercial keyboards do
-	.SubClass               = USB_CSCP_NoDeviceSubclass,
-	.Protocol               = USB_CSCP_NoDeviceProtocol,
+    .USBSpecification       = VERSION_BCD(1,1,0), // we implement USB 1.10 spec (no need to go newer than that and loose compatability with old hosts)
+    .Class                  = USB_CSCP_NoDeviceClass, // our classes are at the interface level, like commercial keyboards do
+    .SubClass               = USB_CSCP_NoDeviceSubclass,
+    .Protocol               = USB_CSCP_NoDeviceProtocol,
 
-	.Endpoint0Size          = FIXED_CONTROL_ENDPOINT_SIZE,
+    .Endpoint0Size          = FIXED_CONTROL_ENDPOINT_SIZE,
 
-	.VendorID               = 0x03EB,
-	.ProductID              = 0x2042, // VID/PID are those donated by ATmel for the LUFA keyboard projects
-	.ReleaseNumber          = VERSION_BCD(6,0,4), // ReleaseNumber can be anything you want. LUFA suggests using this field to destinguish different projects. I use the revision number from my Northgate just for yucks
+    .VendorID               = 0x03EB,
+    .ProductID              = 0x2042, // VID/PID are those donated by ATmel for the LUFA keyboard projects
+    .ReleaseNumber          = VERSION_BCD(6,0,4), // ReleaseNumber can be anything you want. LUFA suggests using this field to destinguish different projects. I use the revision number from my Northgate just for yucks
 
-	.ManufacturerStrIndex   = 1,
-	.ProductStrIndex        = 2,
-	.SerialNumStrIndex      = 3, //NO_DESCRIPTOR,
+    .ManufacturerStrIndex   = 1,
+    .ProductStrIndex        = 2,
+    .SerialNumStrIndex      = 3, //NO_DESCRIPTOR,
 
-	.NumberOfConfigurations = FIXED_NUM_CONFIGURATIONS,
+    .NumberOfConfigurations = FIXED_NUM_CONFIGURATIONS,
 };
 
 static const USB_Descriptor_HIDReport_Datatype_t PROGMEM usb_report_desc[] = {
@@ -70,7 +70,7 @@ static const USB_Descriptor_HIDReport_Datatype_t PROGMEM usb_report_desc[] = {
         HID_RI_USAGE_MAXIMUM(8, 0xff), // commercial keyboard reports 255, as does the USB HIB Boot Keyboard spec, so we do too
         HID_RI_INPUT(8, HID_IOF_DATA | HID_IOF_ARRAY | HID_IOF_ABSOLUTE), // keys are reported as an array of keys which are held down; 0x00 indicates the array entry is not used
 
-	HID_RI_END_COLLECTION(0),
+    HID_RI_END_COLLECTION(0),
 };
 
 static const struct {
@@ -81,54 +81,54 @@ static const struct {
     USB_HID_Descriptor_HID_t              hid_keyboard;
     USB_Descriptor_Endpoint_t             endpoint1;
 } PROGMEM usb_config_desc = {
-	.config = {
-			.Header                 = { .Size = sizeof(USB_Descriptor_Configuration_Header_t), .Type = DTYPE_Configuration },
+    .config = {
+            .Header                 = { .Size = sizeof(USB_Descriptor_Configuration_Header_t), .Type = DTYPE_Configuration },
 
-			.TotalConfigurationSize = sizeof(usb_config_desc),
-			.TotalInterfaces        = 1,
+            .TotalConfigurationSize = sizeof(usb_config_desc),
+            .TotalInterfaces        = 1,
 
-			.ConfigurationNumber    = 1,
-			.ConfigurationStrIndex  = NO_DESCRIPTOR, // we only have one configuration, so no point in naming it
+            .ConfigurationNumber    = 1,
+            .ConfigurationStrIndex  = NO_DESCRIPTOR, // we only have one configuration, so no point in naming it
 
-			.ConfigAttributes       = USB_CONFIG_ATTR_RESERVED, // bit 7 must be set for backwards compat with USB 1.0
+            .ConfigAttributes       = USB_CONFIG_ATTR_RESERVED, // bit 7 must be set for backwards compat with USB 1.0
 
             // NSD TODO switch this back once you are done testing with the cheap unpowered hub which cant supply that kind of power
-			.MaxPowerConsumption    = USB_CONFIG_POWER_MA(10), // USB_CONFIG_POWER_MA(250), // it's a guess since my V-A meter doesn't measure more than 200mA in DC mode, but the Northgate keyboard uses 195 mA idle, and each 1908's-era green LED ought to use 10 to 20 mA. The ATmega32u4 uses nothing in comparison. Anyhow we don't want to guess too low here since a proper host will cut our power if we draw more than we said we would (not that all hosts do that, but some do and many ought to :-).
-		},
+            .MaxPowerConsumption    = USB_CONFIG_POWER_MA(10), // USB_CONFIG_POWER_MA(250), // it's a guess since my V-A meter doesn't measure more than 200mA in DC mode, but the Northgate keyboard uses 195 mA idle, and each 1908's-era green LED ought to use 10 to 20 mA. The ATmega32u4 uses nothing in comparison. Anyhow we don't want to guess too low here since a proper host will cut our power if we draw more than we said we would (not that all hosts do that, but some do and many ought to :-).
+        },
 
-	.interface0 = {
-			.Header                 = { .Size = sizeof(USB_Descriptor_Interface_t), .Type = DTYPE_Interface },
+    .interface0 = {
+            .Header                 = { .Size = sizeof(USB_Descriptor_Interface_t), .Type = DTYPE_Interface },
 
-			.InterfaceNumber        = 0, // interface number 0, our only interface
-			.AlternateSetting       = 0,
+            .InterfaceNumber        = 0, // interface number 0, our only interface
+            .AlternateSetting       = 0,
 
-			.TotalEndpoints         = 1, // 1 IN. commercial keyboards don't have an OUT endpoint. they use the control endpoint for commands, and we will too
+            .TotalEndpoints         = 1, // 1 IN. commercial keyboards don't have an OUT endpoint. they use the control endpoint for commands, and we will too
 
-			.Class                  = HID_CSCP_HIDClass,
-			.SubClass               = HID_CSCP_BootSubclass, // we do implement the simplified Boot protocol
-			.Protocol               = HID_CSCP_KeyboardBootProtocol, // and we're a keyboard as far as the Boot protocol is concerned
+            .Class                  = HID_CSCP_HIDClass,
+            .SubClass               = HID_CSCP_BootSubclass, // we do implement the simplified Boot protocol
+            .Protocol               = HID_CSCP_KeyboardBootProtocol, // and we're a keyboard as far as the Boot protocol is concerned
 
-			.InterfaceStrIndex      = NO_DESCRIPTOR // no name string for this interface
-		},
+            .InterfaceStrIndex      = NO_DESCRIPTOR // no name string for this interface
+        },
 
-	.hid_keyboard =
-		{
-			.Header                 = { .Size = sizeof(USB_HID_Descriptor_HID_t), .Type = HID_DTYPE_HID },
+    .hid_keyboard =
+        {
+            .Header                 = { .Size = sizeof(USB_HID_Descriptor_HID_t), .Type = HID_DTYPE_HID },
 
-			.HIDSpec                = VERSION_BCD(1,1,0), // commercial keyboards report 1.10, so we do too
-			.CountryCode            = 33, // commercial keyboards have CC = 0 also, so it seems there is no need to fill this in, but the USB HID spec says 33d is "US", and we are assuming a US layout for the PS/2 keyboard, so this seems right.
-			.TotalReportDescriptors = 1,
-			.HIDReportType          = HID_DTYPE_Report,
-			.HIDReportLength        = sizeof(usb_report_desc)
-		},
+            .HIDSpec                = VERSION_BCD(1,1,0), // commercial keyboards report 1.10, so we do too
+            .CountryCode            = 33, // commercial keyboards have CC = 0 also, so it seems there is no need to fill this in, but the USB HID spec says 33d is "US", and we are assuming a US layout for the PS/2 keyboard, so this seems right.
+            .TotalReportDescriptors = 1,
+            .HIDReportType          = HID_DTYPE_Report,
+            .HIDReportLength        = sizeof(usb_report_desc)
+        },
 
-	.endpoint1 = {
-			.Header                 = { .Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint },
-			.EndpointAddress        = ENDPOINT_DIR_IN | 1, // endpoint #1 (#0 is always the control endpoint)
-			.Attributes             = EP_TYPE_INTERRUPT | ENDPOINT_USAGE_DATA, // we are a plain interrupt endpoint
-			.EndpointSize           = 8, // we send 8-byte reports, like commercial keyboards do
-			.PollingIntervalMS      = 1, // have the host poll us rapidly for keystrokes and our device has less keystroke latency. commercial keyboards usually have 10 msec polling intervals, but I think that is too much (plus PS/2 takes ~1msec to transfer a byte, and 1+2 bytes for key down+up, so in theory a fast ps/2 keyboard could send us keystrokes faster than USB would notice. not that that really happens (the ps/2 keyboards aren't running at wire rate and take leisurely pauses when sending))
-		},
+    .endpoint1 = {
+            .Header                 = { .Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint },
+            .EndpointAddress        = ENDPOINT_DIR_IN | 1, // endpoint #1 (#0 is always the control endpoint)
+            .Attributes             = EP_TYPE_INTERRUPT | ENDPOINT_USAGE_DATA, // we are a plain interrupt endpoint
+            .EndpointSize           = 8, // we send 8-byte reports, like commercial keyboards do
+            .PollingIntervalMS      = 1, // have the host poll us rapidly for keystrokes and our device has less keystroke latency. commercial keyboards usually have 10 msec polling intervals, but I think that is too much (plus PS/2 takes ~1msec to transfer a byte, and 1+2 bytes for key down+up, so in theory a fast ps/2 keyboard could send us keystrokes faster than USB would notice. not that that really happens (the ps/2 keyboards aren't running at wire rate and take leisurely pauses when sending))
+        },
 };
 
 // our usb_manufacturer_str and usb_product_str strings are in english (even though they are also in unicode, so I don't really see the need)

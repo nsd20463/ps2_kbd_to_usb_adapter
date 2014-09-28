@@ -10,22 +10,22 @@ static volatile uint8_t send_FE; // boolean; when true we should send FE (resend
 static volatile uint8_t bitcount=0;
 static volatile unsigned long prev_ms=0;
 ISR(INT0_vect) {
-	static uint8_t incoming;
+    static uint8_t incoming;
     static uint8_t parity;
 
     // read the data pin
     const uint8_t val = (PIND >> PS2_DATA_PIN) & 1;
 
-	uint8_t n = bitcount;
+    uint8_t n = bitcount;
 
-	unsigned long now_ms = millis();
-	if (now_ms - prev_ms > 100) {
+    unsigned long now_ms = millis();
+    if (now_ms - prev_ms > 100) {
         // it's been too long; start over
-		n = 0;
-		incoming = 0;
+        n = 0;
+        incoming = 0;
         parity = 0;
-	}
-	prev_ms = now_ms;
+    }
+    prev_ms = now_ms;
 
     // NOTE: the oscilloscope shows me that something is pulling Clk low for 240 usec every 250 msec, then releasing Clk, 
     // without doing anything else (Data stays high). It turns out it is the computer. Maybe it is the protocol for some
@@ -37,16 +37,16 @@ ISR(INT0_vect) {
     }
 
     const uint8_t bn = n-1;
-	if (bn < 8) { // note bn is unsigned, so this skips both the start bit and the parity and stop bits
-		incoming |= val << bn;
-	}
+    if (bn < 8) { // note bn is unsigned, so this skips both the start bit and the parity and stop bits
+        incoming |= val << bn;
+    }
     if (bn < 9) {
         // XOR the 8 data bits and the parity bit together
         // the result should be a 1
         parity ^= val;
     }
     n++;
-	if (n == 11) {
+    if (n == 11) {
         if (parity) {
             uint8_t h = head + 1;
             if (h == sizeof(buffer))
@@ -57,12 +57,19 @@ ISR(INT0_vect) {
             }
         } else {
             // the parity was bad and we should ask the keyboard to resend the byte
-            send_FE = 1;
+            if (1) {
+                unsigned long start = millis();
+                while (millis()-start < 4000) {
+                  _delay_us(25000);
+                  PORTE ^= 1<<6;
+                }
+            }
+            //send_FE = 1;
         }
-		n = 0;
-		incoming = 0;
+        n = 0;
+        incoming = 0;
         parity = 0;
-	}
+    }
     bitcount = n;
 }
 
@@ -82,15 +89,15 @@ uint8_t ps2_available(void) {
 
 // read the next scancode
 uint8_t ps2_read(void) {
-	uint8_t t = tail;
-	if (t == head)
+    uint8_t t = tail;
+    if (t == head)
         return 0;
-	t++;
-	if (t >= sizeof(buffer))
+    t++;
+    if (t >= sizeof(buffer))
         t = 0;
-	uint8_t c = buffer[t];
-	tail = t;
-	return c;
+    uint8_t c = buffer[t];
+    tail = t;
+    return c;
 }
 
 // return true if PS2 bus is idle
@@ -110,8 +117,8 @@ uint8_t ps2_write(uint8_t v) {
     // The keyboard will skip sending the FA if we overwrite the keyboard (say the IBM spec).
     // The 100 msec is a sanity check timeout
 wait_for_idle_bus:;
-	unsigned long start_ms = millis();
-	unsigned long now_ms = start_ms;
+    unsigned long start_ms = millis();
+    unsigned long now_ms = start_ms;
     while ((!idle() || (bitcount && now_ms - prev_ms <= 100)) && now_ms - start_ms <= 100)
         now_ms = millis(); // spin
 
@@ -148,8 +155,8 @@ wait_for_idle_bus:;
     // The IBM spec says the keyboard should have been checking the bus no more than every 10 msec, so it might take 10 msec for the keyboard to notice
     // (the 0 we are driving now is considered the Start bit)
     uint8_t parity = 1; // while we clock out the data bits, compute the parity bit
-	start_ms = millis();
-	now_ms = start_ms;
+    start_ms = millis();
+    now_ms = start_ms;
     for (uint8_t n=0; n<10 && now_ms-start_ms < 100; n++) {
         if (n == 8) {
             // we're done with the data; next we send the parity bit and the stop bit

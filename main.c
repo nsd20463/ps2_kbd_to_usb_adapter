@@ -292,6 +292,7 @@ void CALLBACK_HID_Device_ProcessHIDReport(USB_ClassInfo_HID_Device_t* const intf
 bool CALLBACK_HID_Device_CreateHIDReport(USB_ClassInfo_HID_Device_t* const intf, uint8_t* const id, const uint8_t type, void* data, uint16_t* const len) {
     uint8_t* report = (uint8_t*)data;
     *len = 8;
+    *id = 0; // we aren't using report IDs since we only have one possible report to send to the host
     make_usb_report(report);
     return false; // let HID class driver decide if this new report should be sent
 }
@@ -312,7 +313,7 @@ int main(void) {
 
     ps2_init();
 
-    USB_Init();
+    //USB_Init();
     
     if (0) {
         // for debug, display the USB registers
@@ -357,12 +358,10 @@ int main(void) {
     ps2_set_scan_set(3);
     // and show a pattern on the LEDs to show we have a connection
     _delay_us(1000);
-    ps2_set_leds(1<<2);
-    _delay_us(10000);
-    ps2_set_leds(1<<1);
-    _delay_us(10000);
-    ps2_set_leds(1<<0);
-    _delay_us(10000);
+    for (int8_t i=3*2; i>= 0; i--) {
+      ps2_set_leds(1<<((uint8_t)i%3));
+      _delay_us(125000);
+    }
     ps2_set_leds(0);
     PORTE = 0;
 
@@ -419,15 +418,23 @@ int main(void) {
                       PORTE = 1<<6;
                 }
 
-                uint8_t u = ps2_to_usb_keycode(c);
-                if (u && ((matrix[u>>3] >> (u&7)) & 1) == up) {
-                    matrix[u>>3] ^= 1 << (u&7);
+                if (1) {
+                  if (c != 0xFA) { // ignore ACKs
+                    uint8_t u = ps2_to_usb_keycode(c);
+                    blink_byte(c);
+                    blink_byte(u);
+                    if (u && ((matrix[u>>3] >> (u&7)) & 1) == up) {
+                        matrix[u>>3] ^= 1 << (u&7);
+                    }
+                  }
                 }
             }
         }
 
-        HID_Device_USBTask(&usb_hid_keyboard);
-        USB_USBTask();
+        if (0) {
+            HID_Device_USBTask(&usb_hid_keyboard);
+            USB_USBTask();
+        }
     }
 }
 
@@ -440,16 +447,16 @@ static unsigned char timer0_fract = 0;
 
 unsigned long millis()
 {
-	unsigned long m;
-	uint8_t oldSREG = SREG;
+    unsigned long m;
+    uint8_t oldSREG = SREG;
 
-	// disable interrupts while we read timer0_millis or we might get an
-	// inconsistent value (e.g. in the middle of a write to timer0_millis)
-	cli();
-	m = timer0_millis;
-	SREG = oldSREG;
+    // disable interrupts while we read timer0_millis or we might get an
+    // inconsistent value (e.g. in the middle of a write to timer0_millis)
+    cli();
+    m = timer0_millis;
+    SREG = oldSREG;
 
-	return m;
+    return m;
 }
 
 #define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
@@ -470,19 +477,19 @@ unsigned long millis()
 #define FRACT_MAX (1000 >> 3)
 
 ISR(TIMER0_OVF_vect) {
-	// copy these to local variables so they can be stored in registers
-	// (volatile variables must be read from memory on every access)
-	unsigned long m = timer0_millis;
-	unsigned char f = timer0_fract;
+    // copy these to local variables so they can be stored in registers
+    // (volatile variables must be read from memory on every access)
+    unsigned long m = timer0_millis;
+    unsigned char f = timer0_fract;
 
-	m += MILLIS_INC;
-	f += FRACT_INC;
-	if (f >= FRACT_MAX) {
-		f -= FRACT_MAX;
-		m += 1;
-	}
+    m += MILLIS_INC;
+    f += FRACT_INC;
+    if (f >= FRACT_MAX) {
+        f -= FRACT_MAX;
+        m += 1;
+    }
 
-	timer0_fract = f;
-	timer0_millis = m;
+    timer0_fract = f;
+    timer0_millis = m;
 }
 
