@@ -57,13 +57,7 @@ ISR(INT0_vect) {
             }
         } else {
             // the parity was bad and we should ask the keyboard to resend the byte
-            if (1) {
-                unsigned long start = millis();
-                while (millis()-start < 4000) {
-                  _delay_us(25000);
-                  PORTE ^= 1<<6;
-                }
-            }
+            die_blinking(0xfe);
             //send_FE = 1;
         }
         n = 0;

@@ -193,25 +193,27 @@ static void make_usb_report(uint8_t* report) {
     report[1] = 0; // always
     uint8_t j = 2; // our index into the report[]
     for (uint8_t i=0; i<sizeof(matrix); i++) {
-        uint8_t m = matrix[i];
-        if (m && i != 0xE0/8) { // don't repeat the modifier keys in the array
-            // one or more bits are set; decode which they are and encode those keys
-            uint8_t k = i<<3;
-            do {
-                if (m & 1) {
-                    // key k is pressed
-                    if (j < 8)
-                        report[j++] = k;
-                    else {
-                        // overflow; sent a report array filled with 0x01
-                        report[2] = report[3] = report[4] = report[5] = report[6] = report[7] = 0x01;
-                        return;
+        if (i != 0xE0/8) { // don't repeat the modifier keys in the array
+            uint8_t m = matrix[i];
+            if (m) {
+                // one or more bits are set; decode which they are and encode those keys
+                uint8_t k = i<<3;
+                do {
+                    if (m & 1) {
+                        // key k is pressed
+                        if (j < 8)
+                            report[j++] = k;
+                        else {
+                            // overflow; sent a report array filled with 0x01
+                            report[2] = report[3] = report[4] = report[5] = report[6] = report[7] = 0x01;
+                            return;
+                        }
                     }
-                }
-                m >>= 1;
-                k++;
-            } while (m);
-        } // else skip the whole byte m and move on
+                    m >>= 1;
+                    k++;
+                } while (m);
+            } // else skip the whole byte m and move on
+        }
     }
     // zero out the rest of the report
     while (j < 8)
@@ -313,7 +315,7 @@ int main(void) {
 
     ps2_init();
 
-    //USB_Init();
+    USB_Init();
     
     if (0) {
         // for debug, display the USB registers
@@ -355,7 +357,8 @@ int main(void) {
     sei();
 
     // put the keyboard in the easiest scan set for us to deal with
-    ps2_set_scan_set(3);
+    ps2_set_scan_set(2);
+
     // and show a pattern on the LEDs to show we have a connection
     _delay_us(1000);
     for (int8_t i=3*2; i>= 0; i--) {
@@ -419,19 +422,24 @@ int main(void) {
                 }
 
                 if (1) {
-                  if (c != 0xFA) { // ignore ACKs
+                    if (up)
+                      PORTE = 0;
+                    else
+                      PORTE = 1<<6;
+                }
+
+                if (1) {
                     uint8_t u = ps2_to_usb_keycode(c);
-                    blink_byte(c);
-                    blink_byte(u);
+                    //blink_byte(c);
+                    //blink_byte(u);
                     if (u && ((matrix[u>>3] >> (u&7)) & 1) == up) {
                         matrix[u>>3] ^= 1 << (u&7);
                     }
-                  }
                 }
             }
         }
 
-        if (0) {
+        if (1) {
             HID_Device_USBTask(&usb_hid_keyboard);
             USB_USBTask();
         }
