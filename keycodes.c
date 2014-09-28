@@ -83,7 +83,7 @@ static const uint8_t PROGMEM simple_ps2_to_usb_map[] = {
     [0x49] = 0x37, // . and >
     [0x4A] = 0x38, // / and ?
     [0x59] = 0xe5, // RIGHT SHIFT
-    [0x6c] = 0x31, // \ and | (non-US keyboard, right of RIGHT SHIFT)
+    [0x5c] = 0x31, // \ and | (non-US keyboard, right of RIGHT SHIFT)
 
     [0x11] = 0xe0, // LEFT CTRL
     // [0x] = 0xe3, LEFT GUI
@@ -149,7 +149,7 @@ static const uint8_t PROGMEM simple_ps2_to_usb_map[] = {
 // however my Northgate OmniKey Ultra uses it for the OMNI key
 static const uint8_t PROGMEM e0_ps2_to_usb_map[] = {
     // ---- Northgate specific keys ---------
-    [0x73] = 0x7f, // OMNI, mapped to the USB key VOLUME MUTE because I find that the most useful thing to do. Maybe in the future I could use OMNI to reprogram the ATmega32u4
+    [0x73] = 0x51, // OMNI, mapped to DOWN ARROW because I find that the most useful thing to do. Maybe in the future I could use OMNI to reprogram the ATmega32u4. then again print-screen,scroll lock and pause, and even caps lock are equally useless and available
 };
 
 
