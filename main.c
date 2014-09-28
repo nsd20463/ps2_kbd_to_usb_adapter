@@ -307,7 +307,8 @@ int main(void) {
     TIMSK0 = _BV(TOIE0); // enable overflow interrupt
 
     // make bit 6 (the LED) an output for testing/status
-    DDRE = (1<<6);
+    DDRE = 1<<6;
+    PORTE = 1<<6;
 
     ps2_init();
 
@@ -354,9 +355,19 @@ int main(void) {
 
     // put the keyboard in the easiest scan set for us to deal with
     ps2_set_scan_set(3);
+    // and show a pattern on the LEDs to show we have a connection
+    _delay_us(1000);
+    ps2_set_leds(1<<2);
+    _delay_us(10000);
+    ps2_set_leds(1<<1);
+    _delay_us(10000);
+    ps2_set_leds(1<<0);
+    _delay_us(10000);
+    ps2_set_leds(0);
+    PORTE = 0;
 
     while (1) {
-        if (1) {
+        if (0) {
             // sleep until there's something of interest
             set_sleep_mode(SLEEP_MODE_IDLE);
             sleep_enable();
@@ -397,7 +408,7 @@ int main(void) {
                 }
 
                 if (c == 0x5a) {
-                    if (1) {
+                    if (0) {
                       // the Enter key; set all the keyboard lights to On while Enter is held down
                       _delay_us(1000);
                       ps2_write2(0xed, up?0:0x07);
@@ -415,27 +426,8 @@ int main(void) {
             }
         }
 
-        if (USB_DeviceState == DEVICE_STATE_Configured) {
-            // if we have something new to send over USB and there is room, do so
-            Endpoint_SelectEndpoint(ENDPOINT_DIR_IN|1);
-            if (Endpoint_IsReadWriteAllowed()) {
-                uint8_t report[8];
-                make_usb_report(report);
-                static uint8_t prev_report[8];
-                if (memcmp(prev_report, report, sizeof(report))) {
-                    Endpoint_Write_Stream_LE(report, sizeof(report), NULL);
-                    Endpoint_ClearIN();
-                    memcpy(prev_report, report, sizeof(report));
-                    PORTE ^= 1<<6;
-                }
-            }
-        }
-
-#ifndef INTERRUPT_CONTROL_ENDPOINT
-        // note we don't have to call USB_USBTask() if we've set INTERRUPT_CONTROL_ENDPOINT in LUFAConfig.h
         HID_Device_USBTask(&usb_hid_keyboard);
         USB_USBTask();
-#endif
     }
 }
 
