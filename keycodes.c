@@ -119,7 +119,7 @@ static const uint8_t PROGMEM simple_ps2_to_usb_map[] = {
     [0x6C] = 0x5f, // K 7
     [0x75] = 0x60, // K 8
     [0x7D] = 0x61, // K 9
-    [0x79] = 0x57, // K +
+    [0x7c] = 0x57, // K +
 
     [0x6B] = 0x5c, // K 4
     [0x73] = 0x5d, // K 5
@@ -139,7 +139,9 @@ static const uint8_t PROGMEM simple_ps2_to_usb_map[] = {
     // seqence E0+73 even in codeset 3
     // the extra '*' key in the main keyboards sends 7E, same as the
     // '*' in the numeric keypad, so we can't tell them apart
-    
+    // the extra '=' key in the numeric keypad sends 0x%%, same as the
+    // '=/+' key in the main keyboard (except the Northgate removes and
+    // restores any SHIFT modifier so you don't get '+')
 };
 
 // PS/2 codeset 3 (not 2) mapping for the byte after the E0 prefix
