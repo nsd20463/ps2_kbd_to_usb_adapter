@@ -388,6 +388,42 @@ fail:
     return true;
 }
 
+extern void die_blinking(uint8_t);
+
+// send { 0xED, v } to the keyboard
+void PS2Keyboard::set_leds(uint8_t v) {
+    PS2Keyboard::raw_write2(0xed,v);
+}
+
+void PS2Keyboard::set_scan_set(uint8_t v) {
+    PS2Keyboard::raw_write2(0xf0,v);
+}
+
+void PS2Keyboard::raw_write2(uint8_t a, uint8_t b) {
+    if (PS2Keyboard::raw_write(a)) {
+        if (1) {
+            // wait for the ACK byte before sending the next byte
+            while (!PS2Keyboard::raw_available());
+            uint8_t fa = PS2Keyboard::raw_read();
+            if (fa != 0xFA) {
+                // we should have received an ACK byte
+                die_blinking(fa);
+            }
+        }
+        _delay_us(1000);
+        if (PS2Keyboard::raw_write(b)) {
+            if (0) {
+                while (!PS2Keyboard::raw_available());
+                uint8_t fa = PS2Keyboard::raw_read();
+                if (fa != 0xFA) {
+                    // we should have received an ACK byte
+                    die_blinking(fa);
+                }
+            }
+        }
+    }
+}
+
 bool PS2Keyboard::available() {
 	if (CharBuffer || UTF8next) return true;
 	CharBuffer = get_iso8859_code();

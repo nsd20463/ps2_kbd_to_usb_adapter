@@ -219,6 +219,10 @@ class PS2Keyboard {
     static bool raw_available();
     static uint8_t raw_read();
     static bool raw_write(uint8_t v);
+
+    static void raw_write2(uint8_t a, uint8_t b); // write a 2-byte command
+    static void set_leds(uint8_t v);
+    static void set_scan_set(uint8_t v);
 };
 
 #endif
