@@ -1,0 +1,11 @@
+*.o
+*.d
+*.bin
+*.elf
+*.hex
+*.map
+*.sym
+*.eep
+*.lss
+tags
+*.sw?
