@@ -320,7 +320,10 @@ int main(void) {
     sei();
 
     // put the keyboard in the easiest scan set for us to deal with
-    ps2_set_scan_set(2);
+    ps2_set_scan_set(3);
+    // set all keys to make/break with no repeat (USB does the repeat at the host side)
+    _delay_us(1000);
+    ps2_write(0xf8);
 
     // and show a pattern on the LEDs to show we have a connection
     _delay_us(1000);
@@ -345,22 +348,11 @@ int main(void) {
 
         if (ps2_available()) {
             uint8_t c = ps2_read();
-
-            if (1) {
-                uint8_t up = (c == 0xf0); // key up prefix
-                if (up) {
-                    while (!ps2_available());
-                    c = ps2_read();
-                }
-
-                if (1) {
-                    uint8_t u = ps2_to_usb_keycode(c);
-                    //blink_byte(c);
-                    //blink_byte(u);
-                    if (u && ((matrix[u>>3] >> (u&7)) & 1) == up) {
-                        matrix[u>>3] ^= 1 << (u&7);
-                    }
-                }
+            uint16_t mu = ps2_to_usb_keycode(c);
+            uint8_t u = (uint8_t)mu;
+            uint8_t up = mu>>15;
+            if (u && ((matrix[u>>3] >> (u&7)) & 1) == up) {
+                matrix[u>>3] ^= 1 << (u&7);
             }
         }
 
