@@ -183,36 +183,33 @@ void die_blinking(uint8_t c) {
 // USB HIB reports (the packets sent back to the host) contain an slice of the bitmap (range 0xE0-E7) where the modifier (shift/ctrl/alt) keys
 // are found, and an array of up to 6 bit numbers to represent up to 6 down keys.
 
-uint8_t matrix[256/8]; // 32 bytes
-
+uint8_t matrix[0xE8/8]; // 29 bytes, the last of which is the modifier keys
 
 // build a USB keyboard report in the given 8-byte buffer
 static void make_usb_report(uint8_t* report) {
     report[0] = matrix[0xE0/8];
     report[1] = 0; // always
     uint8_t j = 2; // our index into the report[]
-    for (uint8_t i=0; i<sizeof(matrix); i++) {
-        if (i != 0xE0/8) { // don't repeat the modifier keys in the array
-            uint8_t m = matrix[i];
-            if (m) {
-                // one or more bits are set; decode which they are and encode those keys
-                uint8_t k = i<<3;
-                do {
-                    if (m & 1) {
-                        // key k is pressed
-                        if (j < 8)
-                            report[j++] = k;
-                        else {
-                            // overflow; sent a report array filled with 0x01
-                            report[2] = report[3] = report[4] = report[5] = report[6] = report[7] = 0x01;
-                            return;
-                        }
+    for (uint8_t i=0; i<sizeof(matrix)-1; i++) {
+        uint8_t m = matrix[i];
+        if (m) {
+            // one or more bits are set; decode which they are and encode those keys
+            uint8_t k = i<<3;
+            do {
+                if (m & 1) {
+                    // key k is pressed
+                    if (j < 8)
+                        report[j++] = k;
+                    else {
+                        // overflow; sent a report array filled with 0x01
+                        report[2] = report[3] = report[4] = report[5] = report[6] = report[7] = 0x01;
+                        return;
                     }
-                    m >>= 1;
-                    k++;
-                } while (m);
-            } // else skip the whole byte m and move on
-        }
+                }
+                m >>= 1;
+                k++;
+            } while (m);
+        } // else skip the whole byte m and move on
     }
     // zero out the rest of the report
     while (j < 8)
@@ -325,13 +322,16 @@ int main(void) {
     _delay_us(1000);
     ps2_write(0xf8);
 
-    // and show a pattern on the LEDs to show we have a connection
+    // and show a rapid pattern on the keyboard LEDs to indicate
+    // we have a succesfull connection over PS/2
     _delay_us(1000);
     for (int8_t i=3*2; i>= 0; i--) {
       ps2_set_leds(1<<((uint8_t)i%3));
       _delay_us(125000);
     }
+    // turn off keyboard LEDs
     ps2_set_leds(0);
+    // turn off our LED
     PORTE = 0;
 
     while (1) {
@@ -348,12 +348,17 @@ int main(void) {
 
         if (ps2_available()) {
             uint8_t c = ps2_read();
+            static uint8_t blinkie;
+            if (blinkie) blink_byte(c);
             uint16_t mu = ps2_to_usb_keycode(c);
             uint8_t u = (uint8_t)mu;
-            uint8_t up = mu>>15;
+            uint8_t up = mu>>8;
+            if (blinkie && u) blink_byte(u);
             if (u && ((matrix[u>>3] >> (u&7)) & 1) == up) {
                 matrix[u>>3] ^= 1 << (u&7);
             }
+            blinkie ^= (mu == 0x56);
+
         }
 
         if (1) {
