@@ -57,8 +57,9 @@ ISR(INT0_vect) {
             }
         } else {
             // the parity was bad and we should ask the keyboard to resend the byte
-            die_blinking(0xfe);
-            //send_FE = 1;
+            send_FE = 1;
+            // and light the LED until we get the proper code back
+            PORTE = 1<<6;
         }
         n = 0;
         incoming = 0;
@@ -70,13 +71,16 @@ ISR(INT0_vect) {
 void ps2_tick(void) {
     if (send_FE) {
         _delay_us(1000); // give the keyboard a little time before we write to it
-        if (ps2_write(0xFE)) // send an FE (resend command)
+        if (ps2_write(0xFE)) { // send an FE (resend command)
             send_FE = 0;
+            // and clear the LED
+            PORTE = 0;
+        }
         // else leave send_FE set and we'll retry the send at the next call to ps2_tick()
     }
 }
 
-// are there scancodes availble?
+// are there scancodes available?
 uint8_t ps2_available(void) {
     return head != tail;
 }
