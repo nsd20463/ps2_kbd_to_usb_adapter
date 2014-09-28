@@ -92,7 +92,8 @@ static const struct {
 
 			.ConfigAttributes       = USB_CONFIG_ATTR_RESERVED, // bit 7 must be set for backwards compat with USB 1.0
 
-			.MaxPowerConsumption    = USB_CONFIG_POWER_MA(250) // it's a guess since my V-A meter doesn't measure more than 200mA in DC mode, but the Northgate keyboard uses 195 mA idle, and each 1908's-era green LED ought to use 10 to 20 mA. The ATmega32u4 uses nothing in comparison. Anyhow we don't want to guess too low here since a proper host will cut our power if we draw more than we said we would (not that all hosts do that, but some do and many ought to :-).
+            // NSD TODO switch this back once you are done testing with the cheap unpowered hub which cant supply that kind of power
+			.MaxPowerConsumption    = USB_CONFIG_POWER_MA(10), // USB_CONFIG_POWER_MA(250), // it's a guess since my V-A meter doesn't measure more than 200mA in DC mode, but the Northgate keyboard uses 195 mA idle, and each 1908's-era green LED ought to use 10 to 20 mA. The ATmega32u4 uses nothing in comparison. Anyhow we don't want to guess too low here since a proper host will cut our power if we draw more than we said we would (not that all hosts do that, but some do and many ought to :-).
 		},
 
 	.interface0 = {

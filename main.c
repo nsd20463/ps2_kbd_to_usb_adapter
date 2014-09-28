@@ -133,11 +133,9 @@
  *
  */
 
-#include "PS2Keyboard.h"
-#include "keycodes.h"
 #include <LUFA/Drivers/USB/USB.h>
-
-PS2Keyboard ps2k;
+#include "ps2.h"
+#include "keycodes.h"
 
 // blink the byte c on the LED slow and noticeably enough that a human can write it down
 static void blink_byte(uint8_t c) {
@@ -221,7 +219,25 @@ static void make_usb_report(uint8_t* report) {
 }
 
 //-------------------------------------------------------------------------
-// LUFA USB callbacks
+// LUFA USB processing and callbacks
+
+/** Buffer to hold the previously generated Keyboard HID report, for comparison purposes inside the HID class driver. */
+static uint8_t prev_report[8];
+
+static USB_ClassInfo_HID_Device_t usb_hid_keyboard = {
+    .Config = {
+        .InterfaceNumber = 1,
+        .ReportINEndpoint = {
+            .Address = ENDPOINT_DIR_IN | 1,
+            .Size = 8,
+            .Banks = 1,
+        },
+        .PrevReportINBuffer         = prev_report,
+        .PrevReportINBufferSize     = sizeof(prev_report),
+    },
+    // and the rest is init'ed to 0 and maintained by the HID class driver
+};
+
 
 static uint8_t usb_report_proto; // we don't use this, but we need to keep track for the host of whether we are in the normal or boot report mode. 1=normal, 0=boot (matches what USB HID sends)
 
@@ -235,93 +251,51 @@ void EVENT_USB_Device_Connect(void) {
 // USB host is sending a SetConfig packet. it's time to setup the endpoints
 void EVENT_USB_Device_ConfigurationChanged(void) {
     // setup endpoint 1 to hold 8-byte messages
-    PORTE = 1<<6; // light LED for debug
-    Endpoint_ConfigureEndpoint(ENDPOINT_DIR_IN|1, EP_TYPE_INTERRUPT, 8, 1);
+    //PORTE = 1<<6; // light LED for debug
+    //Endpoint_ConfigureEndpoint(ENDPOINT_DIR_IN|1, EP_TYPE_INTERRUPT, 8, 1);
+    HID_Device_ConfigureEndpoints(&usb_hid_keyboard);
+    USB_Device_EnableSOFEvents(); // enable EVENT_USB_Device_StartOfFrame() callback
+}
+
+// called when the SOF packet is seen [once a millisecond). the HID class driver uses these ticks to handle the Idle timeouts
+void EVENT_USB_Device_StartOfFrame(void) {
+    HID_Device_MillisecondElapsed(&usb_hid_keyboard);
 }
 
 // USB host send a control packet
-// the ligtly decoded packet is stored in the global USB_ControlRequest
+// the lightly decoded packet is stored in the global USB_ControlRequest
 void EVENT_USB_Device_ControlRequest(void) {
-    // ignore all non-HID interface requests
-    if ((USB_ControlRequest.bmRequestType & (CONTROL_REQTYPE_TYPE | CONTROL_REQTYPE_RECIPIENT)) != (REQTYPE_CLASS | REQREC_INTERFACE))
-       return;
-    // check that the direction of the bmRequestType and bRequest agree
-    if ((USB_ControlRequest.bmRequestType & CONTROL_REQTYPE_DIRECTION) == (USB_ControlRequest.bRequest & REQDIR_DEVICETOHOST)) // NOTE the ==. The bits agree when they are !=
-        return;
-
-    switch (USB_ControlRequest.bRequest) {
-        case HID_REQ_GetReport:
-            {
-                Endpoint_ClearSETUP();
-                // send back the current keyboard report
-                uint8_t report[8];
-                make_usb_report(report);
-                Endpoint_Write_Control_Stream_LE(report, sizeof(report));
-                Endpoint_ClearOUT();
-            }
-            break;
-        case HID_REQ_GetIdle:
-            {
-                // we don't really implement idle counting, so return a fixed 0 value
-                Endpoint_ClearSETUP();
-                Endpoint_Write_8(0); // dummy value
-                Endpoint_ClearIN();
-                Endpoint_ClearStatusStage();
-            }
-            break;
-        case HID_REQ_GetProtocol:
-            {
-                Endpoint_ClearSETUP();
-                Endpoint_Write_8(usb_report_proto);
-                Endpoint_ClearIN();
-                Endpoint_ClearStatusStage();
-            }
-            break;
-        case HID_REQ_SetReport:
-            {
-                Endpoint_ClearSETUP();
-                // host is sending us an LED report
-                uint8_t led;
-                Endpoint_Read_Control_Stream_LE(&led, sizeof(led));
-                Endpoint_ClearIN();
-
-                // set the keyboard LEDs given the lower bits of report[0]
-                // conveniently the USB and PS/2 encodings of the LED bits are different
-                // USB:
-                //  bit 0...NumLock
-                //  bit 1...CapsLock
-                //  bit 2...ScrollLock
-                // [bit 3...Compose]
-                // [bit 4...Kana]
-                // PS/2:
-                //  bit 0...ScrollLock
-                //  bit 1...NumLock
-                //  bit 2...CapsLock
-                led = (led << 1) | ((led >> 2) & 1);
-                led &= 7; // remove extra ScrollLock bit as well as any Compose/Kana and other garbage
-                ps2k.set_leds(led);
-
-                Endpoint_ClearOUT();
-                Endpoint_ClearStatusStage();
-            }
-            break;
-        case HID_REQ_SetIdle:
-            {
-                // we don't really implement idle counting, so ignore the request
-                Endpoint_ClearSETUP();
-                Endpoint_ClearStatusStage();
-            }
-            break;
-        case HID_REQ_SetProtocol:
-            {
-                Endpoint_ClearSETUP();
-                Endpoint_ClearStatusStage();
-                // save the value so we can return it for HID_REQ_GetProtocol
-                usb_report_proto = !!USB_ControlRequest.wValue;
-            }
-            break;
-    }
+    HID_Device_ProcessControlRequest(&usb_hid_keyboard);
 }
+
+void CALLBACK_HID_Device_ProcessHIDReport(USB_ClassInfo_HID_Device_t* const intf, const uint8_t id, const uint8_t type, const void* data, const uint16_t len) {
+    if (len == 1) {
+        // set the keyboard LEDs given the lower bits of report[0]
+        uint8_t led = *(const uint8_t*)data;
+        // conveniently the USB and PS/2 encodings of the LED bits are different :-)
+        // USB:
+        //  bit 0...NumLock
+        //  bit 1...CapsLock
+        //  bit 2...ScrollLock
+        // [bit 3...Compose]
+        // [bit 4...Kana]
+        // PS/2:
+        //  bit 0...ScrollLock
+        //  bit 1...NumLock
+        //  bit 2...CapsLock
+        led = (led << 1) | ((led >> 2) & 1);
+        led &= 7; // remove extra ScrollLock bit as well as any Compose/Kana and other garbage
+        ps2_set_leds(led);
+    } // else we don't understand what the host just sent, so do nothing
+}
+
+bool CALLBACK_HID_Device_CreateHIDReport(USB_ClassInfo_HID_Device_t* const intf, uint8_t* const id, const uint8_t type, void* data, uint16_t* const len) {
+    uint8_t* report = (uint8_t*)data;
+    *len = 8;
+    make_usb_report(report);
+    return false; // let HID class driver decide if this new report should be sent
+}
+
 
 //-------------------------------------------------------------------------
 
@@ -334,17 +308,11 @@ int main(void) {
 
     // make bit 6 (the LED) an output for testing/status
     DDRE = (1<<6);
-    PORTE = 1<<6;
 
-    ps2k.begin(PS2Keymap_US);
-
-    // put the keyboard in the easiest scan set for us to deal with
-    ps2k.set_scan_set(3);
+    ps2_init();
 
     USB_Init();
     
-    PORTE = 0;
-
     if (0) {
         // for debug, display the USB registers
         blink_byte(UHWCON);
@@ -384,6 +352,9 @@ int main(void) {
     // now that everything is setup, enable interrupts
     sei();
 
+    // put the keyboard in the easiest scan set for us to deal with
+    ps2_set_scan_set(3);
+
     while (1) {
         if (1) {
             // sleep until there's something of interest
@@ -404,50 +375,32 @@ int main(void) {
             }
         }
         
-        if (ps2k.raw_available()) {
-            uint8_t c = ps2k.raw_read();
+        ps2_tick();
+
+        if (ps2_available()) {
+            uint8_t c = ps2_read();
 
             if (0) {
                 // toggle LED on each byte
                 PORTE ^= 1<<6;
             }
 
-            if (1) {
+            if (0) {
                 blink_byte(c);
             }
 
             if (1) {
                 uint8_t up = (c == 0xf0); // key up prefix
                 if (up) {
-                    while (!ps2k.raw_available());
-                    c = ps2k.raw_read();
+                    while (!ps2_available());
+                    c = ps2_read();
                 }
 
                 if (c == 0x5a) {
                     if (1) {
                       // the Enter key; set all the keyboard lights to On while Enter is held down
                       _delay_us(1000);
-                      if (ps2k.raw_write(0xed)) {
-                          if (1) {
-                              while (!ps2k.raw_available());
-                              uint8_t fa = ps2k.raw_read();
-                              if (fa != 0xFA) {
-                                // we should have received an ACK byte
-                                die_blinking(fa);
-                              }
-                          }
-                          _delay_us(1000);
-                          if (ps2k.raw_write(up?0:0x07)) {
-                              if (0) {
-                                  while (!ps2k.raw_available());
-                                  uint8_t fa = ps2k.raw_read();
-                                  if (fa != 0xFA) {
-                                    // we should have received an ACK byte
-                                    die_blinking(fa);
-                                  }
-                              }
-                          }
-                      }
+                      ps2_write2(0xed, up?0:0x07);
                     }
                     if (up)
                       PORTE = 0;
@@ -478,7 +431,11 @@ int main(void) {
             }
         }
 
-        // note we don't have to call USB_USBTask() since we've set INTERRUPT_CONTROL_ENDPOINT in LUFAConfig.h
+#ifndef INTERRUPT_CONTROL_ENDPOINT
+        // note we don't have to call USB_USBTask() if we've set INTERRUPT_CONTROL_ENDPOINT in LUFAConfig.h
+        HID_Device_USBTask(&usb_hid_keyboard);
+        USB_USBTask();
+#endif
     }
 }
 

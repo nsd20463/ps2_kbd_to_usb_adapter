@@ -4,8 +4,8 @@
 #  How to get started with the Atmega32u4 Breakout Board+ on Linux
 #    https://forums.adafruit.com/viewtopic.php?f=24&t=23266
 
-SRC = ps2_kbd_to_usb_adapter.cpp PS2Keyboard.cpp descriptors.c keycodes.c
-TARGET = ps2_kbd_to_usb_adapter
+SRC = main.c ps2.c descriptors.c keycodes.c
+TARGET = adapter
 
 MCU = atmega32u4
 F_CPU = 16000000
