@@ -178,6 +178,35 @@ void die_blinking(uint8_t c) {
 }
 
 //-------------------------------------------------------------------------
+// hack so I can send debug messages as ascii text over USB
+// (no more debugging with only a single red LED to blink out bytes on :-)
+#if 1
+#include <stdio.h>
+#include <stdarg.h>
+
+char debug_buf[500];
+char* debug_tail; // once it's a 16 bit index it might as well be a pointer
+char* debug_head; // technically these shoud be volatile, but given the structure of the current code it isn't necessary
+
+void debug(const char* fmt, ...) {
+    // if we've caught up; reset to the start of the buffer
+    // (this is easier than a real circular buffer, and for debug
+    // purposes as useful)
+    if (debug_head == debug_tail)
+        debug_head = debug_tail = debug_buf;
+    va_list va;
+    va_start(va,fmt);
+    char* buf = debug_head;
+    size_t left = debug_buf + sizeof(debug_buf) - debug_head;
+    vsnprintf(buf, left, fmt, va);
+    debug_head += strlen(debug_head);
+    va_end(va);
+}
+
+#endif
+
+
+//-------------------------------------------------------------------------
 // the keyboard array, as reported over USB
 // USB HID sees a keyboard as a large bit array, each bit representing a single key, where 1=key is pressed, and 0=key is released
 // USB HIB reports (the packets sent back to the host) contain an slice of the bitmap (range 0xE0-E7) where the modifier (shift/ctrl/alt) keys
@@ -188,8 +217,42 @@ uint8_t matrix[0xE8/8]; // 29 bytes, the last of which is the modifier keys
 // build a USB keyboard report in the given 8-byte buffer
 static void make_usb_report(uint8_t* report) {
     report[0] = matrix[0xE0/8];
-    report[1] = 0; // always
-    uint8_t j = 2; // our index into the report[]
+    report[1] = 0; // always 
+    uint8_t j = 2; // our index into the report[] 
+    // if we have debug stuff buffered up, send the next char
+    if (debug_tail != debug_head) {
+        uint8_t c = *debug_tail++;
+        uint8_t m = 0;
+        // convert ascii c into usb keycode
+        if ('a' <= c && c <= 'z')
+            c = c - 'a' + 4;
+        else if ('A' <= c && c <= 'Z') {
+            c = c - 'A' + 4;
+            m = 1<<1; // left shift key
+        } else if ('1' <= c && c <= '9')
+            c = c - '1' + 0x1e;
+        else switch (c) {
+          // decode a smattering of other chars
+          case '(': c = 0x26; m = 2; break;
+          case ')': m = 2; // fall through
+          case '0': c = 0x27; break;
+          case ' ': c = 0x2c; break;
+          case '_': m = 2; // fall through
+          case '-': c = 0x2d; break;
+          case '+': m = 2; // fall through
+          case '=': c = 0x2e; break;
+          case '[': c = 0x2f; break;
+          case ']': c = 0x30; break;
+          case ';': c = 0x33; break;
+          case ',': c = 0x36; break;
+          case '.': c = 0x37; break;
+          case '/': c = 0x38; break;
+          case '\n': c = 0x28; break;
+          default: c = 0x55; // keypad '*' for non-decoding chars
+        }
+        report[0] |= m;
+        report[j++] = c;
+    }
     for (uint8_t i=0; i<sizeof(matrix)-1; i++) {
         uint8_t m = matrix[i];
         if (m) {
