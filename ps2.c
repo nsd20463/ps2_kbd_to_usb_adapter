@@ -8,7 +8,7 @@ static volatile uint8_t send_FE; // boolean; when true we should send FE (resend
 
 // The ISR for the external interrupt pin which happens on the falling edge of the PS2 Clock signal
 static volatile uint8_t bitcount=0;
-static volatile unsigned long prev_ms=0;
+static volatile unsigned long last_bit_ms=0;
 ISR(INT0_vect) {
     static uint8_t incoming;
     static uint8_t parity;
@@ -19,13 +19,13 @@ ISR(INT0_vect) {
     uint8_t n = bitcount;
 
     unsigned long now_ms = millis();
-    if (now_ms - prev_ms > 100) {
+    if (now_ms - last_bit_ms > 100) {
         // it's been too long; start over
         n = 0;
         incoming = 0;
         parity = 0;
     }
-    prev_ms = now_ms;
+    last_bit_ms = now_ms;
 
     // NOTE: the oscilloscope shows me that something is pulling Clk low for 240 usec every 250 msec, then releasing Clk, 
     // without doing anything else (Data stays high). It turns out it is the computer. Maybe it is the protocol for some
@@ -33,6 +33,10 @@ ISR(INT0_vect) {
     // Aha, since data is high during these pulses I know this isn't a proper start bit and I can ignore it.
     if (n == 0 && val) {
         // not a proper start bit; ignore it
+        // or should we ask for a resend?
+        send_FE = 1;
+        // and light the LED until we get the proper code back
+        PORTE = 1<<6;
         return;
     }
 
@@ -69,6 +73,17 @@ ISR(INT0_vect) {
 }
 
 void ps2_tick(void) {
+
+    // if we didn't receive all the bits in a timely maner then we many
+    // have missed the correct start bit. in this sort of case ask the
+    // keyboard to resend
+    if (bitcount && (millis() - last_bit_ms > 10)) {
+        send_FE = 1;
+        // and light the LED until we get the proper code back
+        PORTE = 1<<6;
+    }
+
+    // if we or the ISR need a byte resent, send FE to the keyboard
     if (send_FE) {
         _delay_us(1000); // give the keyboard a little time before we write to it
         if (ps2_write(0xFE)) { // send an FE (resend command)
@@ -117,7 +132,7 @@ uint8_t ps2_write(uint8_t v) {
 wait_for_idle_bus:;
     unsigned long start_ms = millis();
     unsigned long now_ms = start_ms;
-    while ((!idle() || (bitcount && now_ms - prev_ms <= 100)) && now_ms - start_ms <= 100)
+    while ((!idle() || (bitcount && now_ms - last_bit_ms <= 100)) && now_ms - start_ms <= 100)
         now_ms = millis(); // spin
 
     if ((PIND & (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN))) != (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN)))
@@ -127,7 +142,7 @@ wait_for_idle_bus:;
     // emulate the PS motherboard I scoped and wait 19 usec after Clk is high before starting
     // Note that I don't really know if Clk just transitioned low->high, but just in case
     _delay_us(19);
-    if ((PIND & (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN))) != (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN)) || (bitcount && (millis() - prev_ms <= 100)))
+    if ((PIND & (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN))) != (_BV(PS2_CLK_PIN)|_BV(PS2_DATA_PIN)) || (bitcount && (millis() - last_bit_ms <= 100)))
         goto wait_for_idle_bus;
     // OK at this point we believe the PS/2 bus is idle and we're going to grab it and go
 
