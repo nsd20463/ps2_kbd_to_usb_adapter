@@ -184,7 +184,7 @@ void die_blinking(uint8_t c) {
 #include <stdio.h>
 #include <stdarg.h>
 
-char debug_buf[500];
+char debug_buf[800];
 char* debug_tail; // once it's a 16 bit index it might as well be a pointer
 char* debug_head; // technically these shoud be volatile, but given the structure of the current code it isn't necessary
 
@@ -250,9 +250,9 @@ static void make_usb_report(uint8_t* report) {
           case '\n': c = 0x28; break;
           default: c = 0x55; // keypad '*' for non-decoding chars
         }
-        report[0] |= m;
+        report[0] = m; // just stomp it, in case other keys are held down right now
         report[j++] = c;
-    }
+    } else
     for (uint8_t i=0; i<sizeof(matrix)-1; i++) {
         uint8_t m = matrix[i];
         if (m) {
@@ -370,6 +370,7 @@ int main(void) {
 
     // make bit 6 (the LED) an output for testing/status
     DDRE = 1<<6;
+    // light the LED as we initialize
     PORTE = 1<<6;
 
     ps2_init();
@@ -439,8 +440,7 @@ int main(void) {
 volatile unsigned long timer0_millis = 0;
 static unsigned char timer0_fract = 0;
 
-unsigned long millis()
-{
+unsigned long millis() {
     unsigned long m;
     uint8_t oldSREG = SREG;
 
@@ -455,7 +455,6 @@ unsigned long millis()
 
 #define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
 #define clockCyclesToMicroseconds(a) ( (a) / clockCyclesPerMicrosecond() )
-#define microsecondsToClockCycles(a) ( (a) * clockCyclesPerMicrosecond() )
 
 // the prescaler is set so that timer0 ticks every 64 clock cycles, and the
 // the overflow handler is called every 256 ticks.

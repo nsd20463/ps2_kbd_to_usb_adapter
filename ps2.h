@@ -12,12 +12,12 @@
 
 extern unsigned long millis(void);
 extern void die_blinking(uint8_t);
+extern void debug(const char* fmt, ...);
 
 // Note for this app the Clock pin is hardcoded to be INT0/PORTD0
 // and Data pin is hardcoded to be PORTD1 (For lack of better imagination)
-#define PS2_CLK_PIN  PD0
-#define PS2_CLK_INT  INT0 // must match PS2_CLK_PIN
-#define PS2_DATA_PIN PD1
+#define PS2_CLK_PIN  PD5 // must be the XCLK1 pin because we use UART1 for ps/2 receive
+#define PS2_DATA_PIN PD1 // must be the RXD1 pin because we use UART1 for ps/2 receive
 
 void ps2_init(void);
 void ps2_tick(void);
