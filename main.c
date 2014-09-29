@@ -320,7 +320,7 @@ int main(void) {
     ps2_set_scan_set(3);
     // set all keys to make/break with no repeat (USB does the repeat at the host side)
     _delay_us(1000);
-    ps2_write(0xf8);
+    ps2_write_and_ack(0xf8);
 
     // and show a rapid pattern on the keyboard LEDs to indicate
     // we have a succesfull connection over PS/2
@@ -359,7 +359,7 @@ int main(void) {
             //static uint8_t blinkie;
             //if (blinkie) blink_byte(c);
             //if (blinkie && u) blink_byte(u);
-            blinkie ^= (mu == 0x56); // keypad '-' toggles blinkie
+            //blinkie ^= (mu == 0x56); // keypad '-' toggles blinkie
         }
 
         if (1) {

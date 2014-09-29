@@ -231,6 +231,51 @@ fail:
     return 1;
 }
 
+// write a byte and wait for the 0xFA ack
+// handle resending the byte if need be
+uint8_t ps2_write_and_ack(uint8_t v) {
+    // retry the whole transactions 8 times before giving up
+    for (uint8_t try=0; try<8; try++) {
+      // try to send the byte
+      if (!ps2_write(v))
+          // there was a collision or a missing low level ACK; retry
+          continue;
+
+      // wait for the response
+      unsigned long start_ms = millis();
+      while (millis() - start_ms < 250) { // give the keyboard .25 sec to get us a response. normally it takes just a msec or two
+        if (ps2_available())
+          goto got_reply;
+      }
+      // timed out waiting for a response
+      // should we retry , or give up?
+      continue; // let's retry
+
+got_reply:;
+      uint8_t r = ps2_read();
+      if (r == 0xFA) {
+        // yay, an ACK from the keyboard, we are successfull
+        return 1;
+      } else if (r == 0xFE) {
+        // keyboard wants that byte resent, so retry from the top
+        continue;
+      } else {
+        // a strange response from the keyboard
+        // should we ignore it? given up? retry?
+        continue; // let's retry
+      }
+    }
+    // given up and fail
+    return 0;
+}
+
+void ps2_write2(uint8_t a, uint8_t b) {
+    if (ps2_write_and_ack(a)) {
+        _delay_us(1000);
+        ps2_write_and_ack(b);
+    }
+}
+
 // send { 0xED, v } to the keyboard
 void ps2_set_leds(uint8_t v) {
     ps2_write2(0xed,v);
@@ -238,31 +283,6 @@ void ps2_set_leds(uint8_t v) {
 
 void ps2_set_scan_set(uint8_t v) {
     ps2_write2(0xf0,v);
-}
-
-void ps2_write2(uint8_t a, uint8_t b) {
-    if (ps2_write(a)) {
-        if (0) {
-            // wait for the ACK byte before sending the next byte
-            while (!ps2_available());
-            uint8_t fa = ps2_read();
-            if (fa != 0xFA) {
-                // we should have received an ACK byte
-                die_blinking(fa);
-            }
-        }
-        _delay_us(1000);
-        if (ps2_write(b)) {
-            if (0) {
-                while (!ps2_available());
-                uint8_t fa = ps2_read();
-                if (fa != 0xFA) {
-                    // we should have received an ACK byte
-                    die_blinking(fa);
-                }
-            }
-        }
-    }
 }
 
 void ps2_init() {
