@@ -45,7 +45,7 @@ flash : $(TARGET).hex
 
 # rebuild ctags
 tags :
-	ctags -R . $(LUFA_PATH)/LUFA/ /usr/share/arduino/hardware/arduino/
+	ctags -R . $(LUFA_PATH)/ /usr/share/arduino/hardware/arduino/
 
 # pull in the LUFA make system bits we use
 include $(LUFA_PATH)/Build/lufa_core.mk
