@@ -1,7 +1,7 @@
 
 #include "ps2.h"
 
-static volatile uint8_t buffer[32]; // buffer of unread bytes from the ps2 keyboard
+static volatile uint8_t buffer[42]; // buffer of unread bytes from the ps/2 keyboard
 static volatile uint8_t head, tail; // indexes into buffer[]
 
 static volatile uint8_t send_FE; // boolean; when true we should send FE (resend) to the keyboard because we received a byte with bad parity
