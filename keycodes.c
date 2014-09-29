@@ -172,7 +172,6 @@ uint16_t ps2_to_usb_keycode(uint8_t pc) {
                 uc = pgm_read_byte(&simple_ps2_to_usb_map[pc]);
             break;
         case 1: // E0 extended table
-            break;
             if (pc < sizeof(e0_ps2_to_usb_map))
                 uc = pgm_read_byte(&e0_ps2_to_usb_map[pc]);
             break;
