@@ -224,7 +224,7 @@ static uint8_t prev_report[8];
 
 static USB_ClassInfo_HID_Device_t usb_hid_keyboard = {
     .Config = {
-        .InterfaceNumber = 1,
+        .InterfaceNumber = 0,
         .ReportINEndpoint = {
             .Address = ENDPOINT_DIR_IN | 1,
             .Size = 8,
@@ -348,17 +348,18 @@ int main(void) {
 
         if (ps2_available()) {
             uint8_t c = ps2_read();
-            static uint8_t blinkie;
-            if (blinkie) blink_byte(c);
             uint16_t mu = ps2_to_usb_keycode(c);
             uint8_t u = (uint8_t)mu;
             uint8_t up = mu>>8;
-            if (blinkie && u) blink_byte(u);
             if (u && ((matrix[u>>3] >> (u&7)) & 1) == up) {
                 matrix[u>>3] ^= 1 << (u&7);
             }
-            blinkie ^= (mu == 0x56);
 
+            // for debug, blink out the PS/2 code and the USB code
+            //static uint8_t blinkie;
+            //if (blinkie) blink_byte(c);
+            //if (blinkie && u) blink_byte(u);
+            blinkie ^= (mu == 0x56); // keypad '-' toggles blinkie
         }
 
         if (1) {
