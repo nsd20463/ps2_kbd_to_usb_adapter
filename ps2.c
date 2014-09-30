@@ -264,20 +264,22 @@ got_reply:;
     return 0;
 }
 
-void ps2_write2(uint8_t a, uint8_t b) {
-    if (ps2_write_and_ack(a)) {
+uint8_t ps2_write2(uint8_t a, uint8_t b) {
+    uint8_t rc = ps2_write_and_ack(a);
+    if (rc) {
         _delay_us(1000);
-        ps2_write_and_ack(b);
+        rc = ps2_write_and_ack(b);
     }
+    return rc;
 }
 
 // send { 0xED, v } to the keyboard
-void ps2_set_leds(uint8_t v) {
-    ps2_write2(0xed,v);
+uint8_t ps2_set_leds(uint8_t v) {
+    return ps2_write2(0xed,v);
 }
 
-void ps2_set_scan_set(uint8_t v) {
-    ps2_write2(0xf0,v);
+uint8_t ps2_set_scan_set(uint8_t v) {
+    return ps2_write2(0xf0,v);
 }
 
 void ps2_init() {

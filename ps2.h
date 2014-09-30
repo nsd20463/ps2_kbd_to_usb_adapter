@@ -27,8 +27,8 @@ uint8_t ps2_read(void);
 
 uint8_t ps2_write(uint8_t v); // try once to send a byte (not that useful without a lot of error handling)
 uint8_t ps2_write_and_ack(uint8_t v); // ps2_write() + wait for ACK and handle resends/retries
-void ps2_write2(uint8_t a, uint8_t b); // write (and ack) a 2-byte command
-void ps2_set_leds(uint8_t v);
-void ps2_set_scan_set(uint8_t v);
+uint8_t ps2_write2(uint8_t a, uint8_t b); // write (and ack) a 2-byte command
+uint8_t ps2_set_leds(uint8_t v);
+uint8_t ps2_set_scan_set(uint8_t v);
 
 #endif

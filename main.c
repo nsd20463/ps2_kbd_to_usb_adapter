@@ -394,9 +394,10 @@ int main(void) {
       _delay_us(125000);
     }
     // turn off keyboard LEDs
-    ps2_set_leds(0);
-    // turn off our LED
-    PORTE = 0;
+    if (ps2_set_leds(0)) {
+        // turn off our LED
+        PORTE = 0;
+    } // else leave it on since it seems something is not right
 
     while (1) {
         if (1) {
