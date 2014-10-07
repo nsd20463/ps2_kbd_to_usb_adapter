@@ -1,3 +1,22 @@
+/*
+ *  This file is part of ps2_kbd_to_usb_adapter,
+ *  copyright (c) 2014 Nicolas S. Dade
+ *
+ *  ps2_kbd_to_usb_adapter, is free software: you can redistribute it 
+ *  and/or modify it under the terms of the GNU General Public License
+ *  as published by the Free Software Foundation, either version 3 of the
+ *  License, or (at your option) any later version.
+ *
+ *  ps2_kbd_to_usb_adapter, is distributed in the hope that it will be
+ *  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with ps2_kbd_to_usb_adapter,.  If not, see http://www.gnu.org/licenses/
+ * 
+ */
+
 // LUFA library configuration
 // I try and strip it down a little, as suggested by the LUFA docs, but really I don't have space issues
 
@@ -22,7 +41,7 @@
 
 #define FIXED_NUM_CONFIGURATIONS 1 // we only have one USB device configuration
 
-//#define INTERRUPT_CONTROL_ENDPOINT // REQUIRED, because in the PS/2 code, when we send commands to the PS/2 keyboard we are stuck in that code until the keyboard has clocked the bits from us, which takes an arbitrary amount of time.
+//#define INTERRUPT_CONTROL_ENDPOINT // I used to think this would be required, because in the PS/2 code, when we send commands to the PS/2 keyboard we are stuck in that code until the keyboard has clocked the bits from us, which takes an arbitrary amount of time. However everything seems to work out fine without it, and since it isn't a common LUFA config I'll avoid it.
 
 #define NO_DEVICE_REMOTE_WAKEUP // for now I don't implement making the PS/2 keyboard wake up the PC. It might not be a great idea to ever do it given the power usage of these old keyboards at idle (~200 mA x 5V = 1 Watt)
 

@@ -1,3 +1,46 @@
+/*
+ *  This file is part of ps2_kbd_to_usb_adapter,
+ *  copyright (c) 2014 Nicolas S. Dade
+ *
+ *  ps2_kbd_to_usb_adapter, is free software: you can redistribute it 
+ *  and/or modify it under the terms of the GNU General Public License
+ *  as published by the Free Software Foundation, either version 3 of the
+ *  License, or (at your option) any later version.
+ *
+ *  ps2_kbd_to_usb_adapter, is distributed in the hope that it will be
+ *  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ *  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with ps2_kbd_to_usb_adapter,.  If not, see http://www.gnu.org/licenses/
+ * 
+ * -----------------------------------------------------------------------------
+ *
+ * In order to use this code you should configure a few things. Specifically in the USB descriptor
+ * you should set your own strings for the manufacturer, device and serial number of your keyboard.
+ * I like to set these to the exact keyboard I am building the adaptor into, just for fun. The
+ * constants are named usb_manufacturer_str, usb_product_str and usb_serial_str.
+ *
+ * The keyboard and descriptor are set to be an US English keyboard without any extra keys. That is
+ * because I don't have anything else to test with. If you want to use this with a different language
+ * you should edit the CountryCode field in the descriptor (google for the USB 1.1 HID spec for the
+ * value you need, or use 0 like most keyboards do), AND you must edit the mapping from PS/2 keycodes
+ * to USB keycodes in keycodes.c. The latter step will be tedious. Tough. It was for me as well :-)
+ *
+ * If you have measured it you can set the correct power requirement in the descriptor in the
+ * MaxPowerConsumption field.
+ *
+ * Do note that PS/2 ports supplied ample power (5V/275mA) and the older the keyboard the more
+ * of that it used. So if you are plugging the adapter into an unpowered USB hub you might get
+ * an error (see dmesg on linux) that the device requires too much power to operate. In that case
+ * you can use a combination of two things: use a USB port directly connected to the PC or on a
+ * powered hub (the right thing to do), and hack the value of MaxPowerConsumption to something the
+ * PC will accept. However if you do the latter and don't supply the needed power the keybaord can
+ * becoe erratic.
+ *
+ */
+
 // the LUFA USB descriptor macros only work in C, so I have to split them out from the C++ code
 
 #include <LUFA/Drivers/USB/USB.h>
