@@ -43,8 +43,8 @@
  * an error (see dmesg on linux) that the device requires too much power to operate. In that case
  * you can use a combination of two things: use a USB port directly connected to the PC or on a
  * powered hub (the right thing to do), and hack the value of MaxPowerConsumption to something the
- * PC will accept. However if you do the latter and don't supply the needed power the keybaord can
- * becoe erratic.
+ * PC will accept. However if you do the latter and don't supply the needed power the keyboard can
+ * become erratic.
  *
  * 
  * --------------------------------------------------------------------------------------------------
@@ -152,7 +152,7 @@
  *     release clk (computer reads data on rising edge of clk)
  *     <clock out 9 data bits (8 data, 1 parity), pulling and releasing Clk during each data bit>
  *     after the parity bit, the computer should send the Stop bit while the keyboard still gives clk a low pulse
- *     finally the keybaord drives data low, then pulses clk low one last time
+ *     finally the keyboard drives data low, then pulses clk low one last time
  *     then releases both clk and data
  *     the computer should have, by now, driven clk low as a final handshake
  *     the computer keeps clk low until it is ready to receive the next byte from the keyboard
