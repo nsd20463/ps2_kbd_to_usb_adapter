@@ -11,12 +11,14 @@
  *   1   DATA
  *   2   No connection
  *   3   GND
- *   4   +5V
+ *   4   +5V, 275mA
  *   5   CLK
  *   6   No connection
  *
  *   The PS2 is numbered as follows looking into the end of the
- *   keyboard's PS/2 cable.
+ *   keyboard's PS/2 cable. (Conveniently this is also the view
+ *   when you look at the soldering side of the female connector,
+ *   which is your most likely view if you put this together)
  *
  *           ^
  *         5   6
@@ -189,6 +191,7 @@ char* debug_tail; // once it's a 16 bit index it might as well be a pointer
 char* debug_head; // technically these shoud be volatile, but given the structure of the current code it isn't necessary
 
 void debug(const char* fmt, ...) {
+  return;
     // if we've caught up; reset to the start of the buffer
     // (this is easier than a real circular buffer, and for debug
     // purposes as useful)
