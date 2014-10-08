@@ -13,7 +13,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with ps2_kbd_to_usb_adapter,.  If not, see http://www.gnu.org/licenses/
+ *  along with ps2_kbd_to_usb_adapter.  If not, see http://www.gnu.org/licenses/
  * 
  */
 
