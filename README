@@ -2,7 +2,7 @@
  This file is part of ps2_kbd_to_usb_adapter,
  copyright (c) 2014 Nicolas S. Dade
 
- ps2_kbd_to_usb_adapter, is free software: you can redistribute it 
+ ps2_kbd_to_usb_adapter, is free software: you can redistribute it
  and/or modify it under the terms of the GNU General Public License
  as published by the Free Software Foundation, either version 3 of the
  License, or (at your option) any later version.
@@ -17,9 +17,30 @@
 
 -----------------------------------------------------------------------------
 
+WHAT
+
 This code uses an ATmega32u4 as a PS/2 keyboard to USB keyboard converter, to
 allow using a good ole IBM Model M (or Northgate Omnikey Ultra) AT or PS/2
 keyboard with modern computers which now (2014) lack any PS/2 ports at all.
+
+-----------------------------------------------------------------------------
+
+BUILD
+
+To use this, install the AVR toolchain ('apt-get install gcc-avr avrdude'),
+fetch the LUFA library (http://www.github.com/abcminiuser/lufa/archive/)
+(version 140302 is the one I am using), edit the LUFA_PATH in Makefile to point
+to where the LUFA library source as been unpacked, and type 'make'.
+
+If you are using the Adafruit ATmega32u4 breakout board then 'make flash' while
+it is the bootloader (red light pulsing) will program it. Otherwise use
+whatever mechanism you usually use and the 'adapter.hex' (or .bin) files.
+
+You might enjoy customizing the USB descriptor as described below.
+
+-----------------------------------------------------------------------------
+
+WHY
 
 I wrote it after trying two commercial adapters and finding neither worked very
 well. Keys would remain stuck down (or rather, the UP keystroke from PS/2 didn't
@@ -46,10 +67,11 @@ own, though).  The make target 'flash' (as in "make flash") and the configured
 target in the makefile are setup for the Adafruit ATmega32u4 breakout board.
 Edit as you wish.
 
-This code uses the LUFA USB library. Fetch it and set the path to the LUFA
-source in the LUFA_PATH variable in Makefile.
+----------------------------------------------------------------------------
 
-In order to use this code you should configure a few things. Specifically in the
+CUSTOMIZING and TROUBLESHOOTING
+
+In order to use this code you should customize a few things. Specifically in the
 USB descriptor you should set your own strings for the manufacturer, device and
 serial number of your keyboard.  I like to set these to the exact keyboard I am
 building the adaptor into, just for fun. The constants are named
