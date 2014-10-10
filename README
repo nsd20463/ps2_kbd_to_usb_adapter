@@ -33,39 +33,48 @@ fetch the LUFA library (http://www.github.com/abcminiuser/lufa/archive/)
 to where the LUFA library source as been unpacked, and type 'make'.
 
 If you are using the Adafruit ATmega32u4 breakout board then 'make flash' while
-it is the bootloader (red light pulsing) will program it. Otherwise use
-whatever mechanism you usually use and the 'adapter.hex' (or .bin) files.
+the bootloader is running (red light is pulsing) will program it. Otherwise use
+whatever mechanism you usually use and the 'adapter.hex' (or .bin) file.
 
-You might enjoy customizing the USB descriptor as described below.
+You should enjoy customizing the USB descriptor as described below.
 
 -----------------------------------------------------------------------------
 
 WHY
 
-I wrote it after trying two commercial adapters and finding neither worked very
-well. Keys would remain stuck down (or rather, the UP keystroke from PS/2 didn't
-register).  In this code PS/2 receive is done in hardware using the ATmega's
-UART set in a mode which matches what PS/2 uses (externally clocked, odd-parity,
-1 stop-bit). In addition the code asks the keyboard for resends (0xFE command)
-when a parity error occurs. The combination of these two features is what makes
-this code more reliable than the commercial adapters and other low level PS/2
-libraries I've found.
+I wrote this after trying two commercial adapters and finding neither worked
+very well. Keys would remain stuck down (or rather, the UP keystroke from PS/2
+didn't register).  In this code PS/2 receive is done in hardware using the
+ATmega's UART set in a mode which matches what PS/2 uses (externally clocked,
+odd-parity, 1 stop-bit). In addition the code asks the keyboard for resends
+(0xFE command) when a parity error occurs. The combination of these two
+features is what makes this code more reliable than the commercial adapters and
+other low level PS/2 libraries I've tried.
 
-In addition, after having worked on PS/2 and USB keyboard firmware in 1997-1999
-I liked the low latency of PS/2 (~1 msec for DOWN, ~2 msec for UP) as opposed to
-that of typical USB keyboards. 10 msec was the suggested polling interval in the
-USB 1.1 HID spec and almost all USB keyboards use that. The exceptions are
-"gaming" keyboards in which something better than the default is used. So here
-I've set the polling to 2 msec, which matches PS/2.
+I like the low latency of PS/2 (~1 msec for DOWN, ~2 msec for UP). The typical
+polling rate of USB keyboards is 10 msec. This was the rate suggested by the
+keyboard example in the USB 1.1 HID spec back in 1997 and nearly everyone
+copied it verbatim.  The exception is the so-called "gaming" keyboards.  A
+polling interval of 10 msec means your keystroke waits inside the keyboard for
+up to 10 msec before the computer polls the keyboard and learns the key has
+moved.  I can't do anything about the extra latency caused by sending
+keystrokes first over PS/2 and then over USB, but I can minimize the USB
+latency by upping the polling interval to 2 msec. This faster polling is of no
+consequence on modern PCs and USB busses, which all run may times faster than
+anything from 1997 could. The fast polling also helps if you enjoy configuring
+the keyboard to have rapid repeat rates and short repeat delays, a
+configuration combination where prompt and accurate UP events are necessary.
+Myself I use 88 chars/sec after a 175 msec delay because I'm not so young
+anymore.
 
 I like using the Adafruit ATmega32u4 breakout board
 (https://www.adafruit.com/products/296) because its bootloader (accessed by
-pressing the reset button) allows for quick and easy reflashing without
-connecting up the 6-pin header. But any board with an ATMega32u4 will do, for
-example the Teensy 2.0 or even an Arduino Leonardo should do (you're on your
-own, though).  The make target 'flash' (as in "make flash") and the configured
-target in the makefile are setup for the Adafruit ATmega32u4 breakout board.
-Edit as you wish.
+pressing the reset button) allows for quick and easy reflashing over USB,
+without requiring connecting to the 6-pin header. But any board with an
+ATMega32u4 will do, for example the Teensy 2.0 or even an Arduino Leonardo
+should do (you're on your own, though).  The make target 'flash' (as in "make
+flash") and the configured target in the makefile are setup for the Adafruit
+ATmega32u4 breakout board.  Edit as you wish.
 
 ----------------------------------------------------------------------------
 
@@ -77,13 +86,13 @@ serial number of your keyboard.  I like to set these to the exact keyboard I am
 building the adaptor into, just for fun. The constants are named
 usb_manufacturer_str, usb_product_str and usb_serial_str.
 
-The keyboard and descriptor are set to be an US English keyboard without any
-extra keys. That is because I don't have anything else to test with. If you want
-to use this with a different language you should edit the CountryCode field in
-the descriptor (google for the USB 1.1 HID spec for the value you need, or use 0
-like most keyboards do), AND you must edit the mapping from PS/2 keycodes to USB
-keycodes in keycodes.c. The latter step will be tedious. Tough. It was for me as
-well :-)
+The keyboard and descriptor are describe an US English keyboard without any
+extra keys. That is because I don't have anything else to test with. If you
+want to use this with a different language you should edit the CountryCode
+field in the descriptor (google for the USB 1.1 HID spec for the value you
+need, or use 0 like most keyboards do), AND you must edit the mapping from PS/2
+keycodes to USB keycodes in keycodes.c. The latter step will be tedious. Tough.
+It was for me as well :-)
 
 If you have measured it you can set the correct power requirement in the
 descriptor in the MaxPowerConsumption field.
@@ -92,10 +101,12 @@ Do note that PS/2 ports supplied ample power (5V/275mA) and the older the
 keyboard the more of that it used. So if you are plugging the adapter into an
 unpowered USB hub you might get an error (see dmesg on linux) that the device
 requires too much power to operate. In that case you can use a combination of
-two things: use a USB port directly connected to the PC or on a powered hub (the
-right thing to do), and hack the value of MaxPowerConsumption to something the
-PC will accept. However if you do the latter and don't supply the needed power
-the keyboard can become erratic.
+two things: use a USB port on the PC itself or on a powered hub (the right
+thing to do), or in a pinch, hack the value of MaxPowerConsumption to something
+the PC will accept. However if you do the latter and don't supply the needed
+power the keyboard can become erratic, or the USB port can notice the extra
+power draw and shut off, or any sort of undocumented behavior. So never-mind
+my mentioning it :-)
 
 -- 
   Nicolas S. Dade
