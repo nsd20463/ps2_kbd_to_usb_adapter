@@ -2,7 +2,7 @@
  *  This file is part of ps2_kbd_to_usb_adapter,
  *  copyright (c) 2014 Nicolas S. Dade
  *
- *  ps2_kbd_to_usb_adapter, is free software: you can redistribute it 
+ *  ps2_kbd_to_usb_adapter, is free software: you can redistribute it
  *  and/or modify it under the terms of the GNU General Public License
  *  as published by the Free Software Foundation, either version 3 of the
  *  License, or (at your option) any later version.
@@ -14,7 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with ps2_kbd_to_usb_adapter.  If not, see http://www.gnu.org/licenses/
- * 
+ *
  */
 
 // the mapping from PS/2 keycodes to USB is a PITA, and c++ not supporting the designated array initializers makes me use good ole C for this
@@ -128,7 +128,7 @@ static const uint8_t PROGMEM simple_ps2_to_usb_map[] = {
     [0x61] = 0x50, // LEFT ARROW
     [0x60] = 0x51, // DOWN ARROW
     [0x6a] = 0x4f, // RIGHT ARROW
-    
+
     [0x76] = 0x53, // NUM LOCK
     [0x77] = 0x54, // K /
     [0x7e] = 0x55, // K *
@@ -151,6 +151,26 @@ static const uint8_t PROGMEM simple_ps2_to_usb_map[] = {
     [0x71] = 0x63, // K .
     [0x79] = 0x58, // K ENTER
 
+    // Additional keys for non-us keyboard. See
+    //   http://www.quadibloc.com/comp/scan.htm
+    // (thanks to kreijack)
+    [0x13] = 0x64, // INT1
+    [0x53] = 0x32, // INT2
+    [0x51] = 0x87, // INT3
+    [0x5D] = 0x89, // INT4
+
+    // extended keys
+    [0x05] = 0x9a, // Attn SysRq
+    [0x06] = 0x9c, // Clear
+    [0x04] = 0xa3, // CrSel Properties
+    [0x03] = 0xa4, // ExSel SetUp
+    [0x8b] = 0xe3, // Win L
+    [0x8c] = 0xe7, // Win R
+    [0x8d] = 0x65, // WinMenu
+    [0x87] = 0x88, // Katakana
+    [0x86] = 0x8a, // Kanji
+    [0x85] = 0x8b, // Hiragana
+
     // ----- below this line are mappings specific to Northgate keyboards -----
     // (they should be no-ops on regular PS/2 keyboards)
     // the OMNI key (center key of arrow compass) sends the 2-byte
@@ -167,7 +187,7 @@ static const uint8_t PROGMEM simple_ps2_to_usb_map[] = {
 // however my Northgate OmniKey Ultra uses it for the OMNI key
 static const uint8_t PROGMEM e0_ps2_to_usb_map[] = {
     // ---- Northgate specific keys ---------
-    [0x73] = 0x51, // OMNI, mapped to DOWN ARROW because I find that the most useful thing to do. Maybe in the future I could use OMNI to reprogram the ATmega32u4. then again print-screen,scroll lock and pause, and even caps lock are equally useless and available
+    [0x73] = 0x51, // the OMNI key, mapped to DOWN ARROW because I find that the most useful thing to do. Maybe in the future I could use OMNI to reprogram the ATmega32u4. then again print-screen,scroll lock and pause, and even caps lock are equally useless and available
 };
 
 
