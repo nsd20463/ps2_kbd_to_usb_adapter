@@ -86,13 +86,15 @@ serial number of your keyboard.  I like to set these to the exact keyboard I am
 building the adaptor into, just for fun. The constants are named
 usb_manufacturer_str, usb_product_str and usb_serial_str.
 
-The keyboard and descriptor are describe an US English keyboard without any
-extra keys. That is because I don't have anything else to test with. If you
-want to use this with a different language you should edit the CountryCode
-field in the descriptor (google for the USB 1.1 HID spec for the value you
-need, or use 0 like most keyboards do), AND you must edit the mapping from PS/2
-keycodes to USB keycodes in keycodes.c. The latter step will be tedious. Tough.
-It was for me as well :-)
+The keyboard and descriptor describe an US English keyboard. With help from
+kreijack non-US keyboards should be supported. However all I know is English
+and Italian keyboards work. That is because I don't have anything else to test
+with. If you want to use this with a different language you should edit the
+CountryCode field in the descriptor (google for the USB 1.1 HID spec for the
+value you need, or use 0 like most keyboards do), AND you must edit the mapping
+from PS/2 scan-code set 3 keycodes to USB keycodes in keycodes.c. The latter
+step will be tedious. Tough.  It was for me as well :-) Scan code information
+can be found at http://www.quadibloc.com/comp/scan.htm
 
 If you have measured it you can set the correct power requirement in the
 descriptor in the MaxPowerConsumption field.
