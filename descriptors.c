@@ -57,7 +57,7 @@ static const USB_Descriptor_Device_t PROGMEM usb_device_desc = {
 
     .VendorID               = 0x03EB,
     .ProductID              = 0x2042, // VID/PID are those donated by ATmel for the LUFA keyboard projects
-    .ReleaseNumber          = VERSION_BCD(6,0,4), // ReleaseNumber can be anything you want. LUFA suggests using this field to destinguish different projects. I use the revision number from my Northgate just for yucks
+    .ReleaseNumber          = VERSION_BCD(0xf2,1,3),
 
     .ManufacturerStrIndex   = 1,
     .ProductStrIndex        = 2,
@@ -178,11 +178,11 @@ static const struct {
 static const USB_Descriptor_String_t PROGMEM usb_language_str = USB_STRING_DESCRIPTOR_ARRAY(LANGUAGE_ID_ENG);
 
 // I'll use the name of a long defunct manufacturer and product just for fun. Hopefully if someone from back then sees this it will make them smile
-static const USB_Descriptor_String_t PROGMEM usb_manufacturer_str = USB_STRING_DESCRIPTOR(L"Northgate Computer Systems");
-static const USB_Descriptor_String_t PROGMEM usb_product_str = USB_STRING_DESCRIPTOR(L"OmniKey Ultra");
+static const USB_Descriptor_String_t PROGMEM usb_manufacturer_str = USB_STRING_DESCRIPTOR(L"IBM");
+static const USB_Descriptor_String_t PROGMEM usb_product_str = USB_STRING_DESCRIPTOR(L"Model M keyboard 42H1292");
 
 // make up a serial number just for fun. It comes right off the back of my Northgate
-static const USB_Descriptor_String_t PROGMEM usb_serial_str = USB_STRING_DESCRIPTOR(L"0621683");
+static const USB_Descriptor_String_t PROGMEM usb_serial_str = USB_STRING_DESCRIPTOR(L"2130666");
 
 static const USB_Descriptor_String_t* const usb_strings[] = {
     &usb_language_str,
