@@ -151,6 +151,26 @@ static const uint8_t PROGMEM simple_ps2_to_usb_map[] = {
     [0x71] = 0x63, // K .
     [0x79] = 0x58, // K ENTER
 
+    // Additional keys for non-us keyboard. See
+    //   http://www.quadibloc.com/comp/scan.htm
+    // (thanks to kreijack)
+    [0x13] = 0x64, // INT1
+    [0x53] = 0x32, // INT2
+    [0x51] = 0x87, // INT3
+    [0x5D] = 0x89, // INT4
+
+    // extended keys
+    [0x05] = 0x9a, // Attn SysRq
+    [0x06] = 0x9c, // Clear
+    [0x04] = 0xa3, // CrSel Properties
+    [0x03] = 0xa4, // ExSel SetUp
+    [0x8b] = 0xe3, // Win L
+    [0x8c] = 0xe7, // Win R
+    [0x8d] = 0x65, // WinMenu
+    [0x87] = 0x88, // Katakana
+    [0x86] = 0x8a, // Kanji
+    [0x85] = 0x8b, // Hiragana
+
     // ----- below this line are mappings specific to Northgate keyboards -----
     // (they should be no-ops on regular PS/2 keyboards)
     // the OMNI key (center key of arrow compass) sends the 2-byte
