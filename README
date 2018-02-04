@@ -27,8 +27,8 @@ keyboard with modern computers which now (2014) lack any PS/2 ports at all.
 
 BUILD
 
-To use this, install the AVR toolchain ('apt-get install gcc-avr avrdude'),
-fetch the LUFA library (http://www.github.com/abcminiuser/lufa/archive/)
+To use this, install the AVR toolchain ('apt-get install gcc-avr avrdude avr-libc'),
+fetch the LUFA library (http://www.fourwalledcubicle.com/LUFA.php)
 (version 140302 is the one I am using), edit the LUFA_PATH in Makefile to point
 to where the LUFA library source as been unpacked, and type 'make'.
 
